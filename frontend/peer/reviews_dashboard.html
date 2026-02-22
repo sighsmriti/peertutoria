@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Reviews Dashboard - PeerTutoria</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins&display=swap" rel="stylesheet">
+
+<style>
+body{
+    margin:0;
+    font-family:Poppins,sans-serif;
+    background:#f1f6ff;
+}
+.container{
+    padding:30px 50px;
+}
+.card{
+    background:white;
+    padding:20px;
+    border-radius:12px;
+    margin-bottom:20px;
+    box-shadow:0 6px 14px rgba(0,0,0,0.08);
+}
+.stats{
+    display:flex;
+    gap:20px;
+}
+.stat-box{
+    flex:1;
+    text-align:center;
+    background:#fff;
+    padding:20px;
+    border-radius:12px;
+    box-shadow:0 6px 14px rgba(0,0,0,0.08);
+}
+.stat-box h2{
+    margin:0;
+    color:#2196F3;
+}
+canvas{
+    background:white;
+    padding:20px;
+    border-radius:12px;
+    box-shadow:0 6px 14px rgba(0,0,0,0.08);
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h2>📊 Reviews Dashboard</h2>
+
+<div class="stats">
+    <div class="stat-box">
+        <h2 id="sessions">0</h2>
+        <p>Total Sessions Completed</p>
+    </div>
+
+    <div class="stat-box">
+        <h2 id="reviews">0</h2>
+        <p>Total Reviews Received</p>
+    </div>
+</div>
+
+<br>
+
+<canvas id="reviewChart" height="120"></canvas>
+
+</div>
+
+<script src="../config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+const user = JSON.parse(localStorage.getItem("currentUser"));
+if(!user) window.location.href="../index.html";
+
+async function loadDashboard(){
+
+    const res = await fetch(`${BASE_URL}/api/peer/reviews-dashboard/${user.id}`);
+    const data = await res.json();
+
+    /* TOTALS */
+    document.getElementById("sessions").innerText = data.total_sessions;
+    document.getElementById("reviews").innerText = data.total_reviews;
+
+    /* GRAPH DATA */
+    const labels = data.monthly.map(m => m.month);
+    const sessions = data.monthly.map(m => m.sessions);
+    const reviews = data.monthly.map(m => m.reviews);
+
+    const ctx = document.getElementById("reviewChart").getContext("2d");
+
+    new Chart(ctx, {
+        type: "line",
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: "Sessions Completed",
+                    data: sessions,
+                    borderColor: "#2196F3",
+                    backgroundColor: "rgba(33,150,243,0.1)",
+                    tension: 0.3
+                },
+                {
+                    label: "Reviews Received",
+                    data: reviews,
+                    borderColor: "#FF4081",
+                    backgroundColor: "rgba(255,64,129,0.1)",
+                    tension: 0.3
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { position: "top" }
+            }
+        }
+    });
+}
+
+loadDashboard();
+</script>
+
+</body>
+</html>

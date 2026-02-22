@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Notes & Materials - PeerTutoria</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<style>
+:root {
+    --primary:#2196F3;
+    --secondary:#FF4081;
+    --bg:#f1f6ff;
+    --white:#fff;
+    --radius:14px;
+    --shadow:0 8px 20px rgba(0,0,0,0.1);
+}
+
+body {
+    margin:0;
+    font-family:Poppins, sans-serif;
+    background:var(--bg);
+}
+
+/* NAVBAR */
+.navbar {
+    background:var(--white);
+    padding:18px 40px;
+    box-shadow:var(--shadow);
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+}
+.navbar h2 { color:var(--primary); margin:0; }
+.navbar a { margin-left:18px; text-decoration:none; color:#333; }
+
+/* PAGE CONTENT */
+.container { padding:30px 50px; }
+
+.section-title {
+    font-size:22px;
+    font-weight:600;
+    margin-bottom:15px;
+}
+
+/* NOTES GRID */
+.material-grid {
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(250px, 1fr));
+    gap:20px;
+}
+
+.material-card {
+    background:var(--white);
+    padding:20px;
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+}
+
+.material-card h3 {
+    margin:0 0 6px 0;
+}
+
+.material-card p {
+    margin:5px 0;
+}
+
+button {
+    padding:10px 16px;
+    border:none;
+    border-radius:var(--radius);
+    background:var(--primary);
+    color:white;
+    cursor:pointer;
+    margin-top:10px;
+}
+
+.filter-bar {
+    margin-bottom:20px;
+    display:flex;
+    gap:15px;
+}
+
+select {
+    padding:10px;
+    border-radius:var(--radius);
+    border:none;
+    box-shadow:var(--shadow);
+}
+.notes-search {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.notes-search input {
+    flex: 1;
+    padding: 12px 15px;
+    border-radius: var(--radius);
+    border: none;
+    box-shadow: var(--shadow);
+    font-size: 15px;
+}
+
+.notes-search button {
+    padding: 12px 20px;
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: var(--radius);
+    cursor: pointer;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="navbar">
+    <h2>PeerTutoria</h2>
+    <div>
+        <a href="student_dashboard.html">Home</a>
+        <a href="../shared/notifications.html">Notifications</a>
+        <a href="../shared/profile.html"
+   onclick="localStorage.removeItem('viewProfileUserEmail')">
+   Profile
+</a>
+
+        <a href="../shared/settings.html">Settings</a>
+    </div>
+</div>
+
+<div class="container">
+
+    <div class="section-title">Notes & Materials</div>
+    <!-- SEARCH BAR -->
+<div class="notes-search">
+    <input type="text" placeholder="Search notes, assignments, tutors...">
+    <button>Search</button>
+</div>
+
+
+    <!-- FILTERS -->
+    <div class="filter-bar">
+        <select>
+            <option>All Types</option>
+            <option>Notes</option>
+            <option>Assignments</option>
+            <option>Slides / PPT</option>
+            <option>Purchased Material</option>
+        </select>
+
+        <select>
+            <option>All Subjects</option>
+            <option>Maths</option>
+            <option>Python</option>
+            <option>English</option>
+            <option>Physics</option>
+        </select>
+    </div>
+
+    <!-- MATERIAL LIST -->
+    <div class="material-grid">
+
+        <div class="material-card">
+            <h3>Algebra Notes</h3>
+            <p>📘 PDF</p>
+            <p>By Priya Sharma</p>
+            <button>Download</button>
+        </div>
+
+        <div class="material-card">
+            <h3>Python Basics Assignment</h3>
+            <p>📝 Worksheet</p>
+            <p>By Arjun Kumar</p>
+            <button>Download</button>
+        </div>
+
+        <div class="material-card">
+            <h3>Spoken English Slides</h3>
+            <p>📄 PPT</p>
+            <p>By Sneha Kapoor</p>
+            <button>Download</button>
+        </div>
+
+        <div class="material-card">
+            <h3>Premium Physics Notes</h3>
+            <p>🔒 Purchased</p>
+            <p>By Aryan Patel</p>
+            <button>Open</button>
+        </div>
+
+    </div>
+
+</div>
+
+</body>
+</html>

@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Available Tutors - PeerTutoria</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary: #2196F3;
+            --secondary: #FF4081;
+            --bg: #f1f6ff;
+            --white: #fff;
+            --radius: 14px;
+            --shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+        }
+
+        body {
+            margin: 0;
+            font-family: Poppins, sans-serif;
+            background: var(--bg);
+        }
+
+        .navbar {
+            background: var(--white);
+            padding: 18px 40px;
+            box-shadow: var(--shadow);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .navbar h2 {
+            color: var(--primary);
+            margin: 0;
+        }
+
+        .navbar a {
+            margin-left: 20px;
+            text-decoration: none;
+            color: #333;
+        }
+
+        .container {
+            padding: 30px 50px;
+        }
+
+        .heading {
+            font-size: 26px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .subheading {
+            color: #666;
+            margin-bottom: 25px;
+        }
+
+        .topic-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+        }
+
+        .topic-card {
+            background: var(--white);
+            padding: 20px;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+        }
+
+        .topic-card button {
+            margin-top: 10px;
+            width: 100%;
+            padding: 10px;
+            background: var(--secondary);
+            color: white;
+            border: none;
+            border-radius: var(--radius);
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="navbar">
+    <h2>PeerTutoria</h2>
+    <div>
+        <a href="../student/student_dashboard.html">Home</a>
+        <a href="../shared/profile.html" onclick="localStorage.removeItem('viewProfileUserEmail')">Profile</a>
+        <a href="../shared/settings.html">Settings</a>
+    </div>
+</div>
+
+<div class="container">
+    <div class="heading">Available Tutors</div>
+    <div class="subheading" id="searchInfo"></div>
+    <div class="topic-grid" id="tutorContainer"></div>
+</div>
+
+<script src="../config.js"></script>
+
+<script>
+const user = JSON.parse(localStorage.getItem("currentUser"));
+if (!user) {
+    alert("Login first");
+    window.location.href = "../index.html";
+}
+
+const topic = (localStorage.getItem("searchTopic") || "").toLowerCase();
+const container = document.getElementById("tutorContainer");
+const info = document.getElementById("searchInfo");
+
+info.innerText = topic
+    ? `Showing tutors for: "${topic}"`
+    : "No search topic provided.";
+
+fetch(`${BASE_URL}/match`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ subject: topic })
+})
+.then(res => res.json())
+.then(tutors => {
+
+    container.innerHTML = "";
+
+    if (!tutors.length) {
+        container.innerHTML = "<p>No tutors found for this topic.</p>";
+        return;
+    }
+
+    /* -------- SORT ONLINE FIRST -------- */
+    tutors.sort((a, b) => {
+        if (a.is_online === b.is_online) {
+            return b.matchPercent - a.matchPercent;
+        }
+        return b.is_online - a.is_online;
+    });
+
+    tutors.forEach((t, index) => {
+        const card = document.createElement("div");
+        card.className = "topic-card";
+
+        /* highlight online tutors */
+        if (t.is_online) {
+            card.style.border = "2px solid #4CAF50";
+        }
+
+        card.innerHTML = `
+            <h3>${index === 0 ? "⭐ Best Match — " : ""}${t.name}</h3>
+            <p><strong>Match:</strong> ${t.matchPercent}%</p>
+            <p><strong>Skills:</strong> ${t.skills.join(", ")}</p>
+            <p><strong>Rating:</strong> ${t.rating} ⭐</p>
+            <p>${t.is_online ? "🟢 Online" : "⚫ Offline"}</p>
+
+            <button 
+                onclick="requestSession(${t.id})"
+                ${!t.is_online ? "disabled style='opacity:0.5; cursor:not-allowed;'" : ""}>
+                ${t.is_online ? "Request Session" : "Offline"}
+            </button>
+
+            <button onclick="viewProfile(${t.id})">
+                View Profile
+            </button>
+        `;
+
+        container.appendChild(card);
+    });
+})
+.catch(err => {
+    console.error(err);
+    container.innerHTML = "<p>Error loading tutors.</p>";
+});
+
+/* -------- REQUEST SESSION -------- */
+function requestSession(tutorId) {
+    fetch(`${BASE_URL}/api/session/start`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            studentEmail: user.email,
+            tutorId,
+            topic
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.sessionId) {
+            localStorage.setItem("pendingSessionId", data.sessionId);
+            window.location.href = "../match/finding.html";
+        } else {
+            alert("Failed to start session");
+        }
+    })
+    .catch(() => alert("Session request failed"));
+}
+
+/* -------- VIEW PROFILE (FIXED) -------- */
+function viewProfile(id) {
+    if (!id) {
+        alert("Cannot open profile");
+        return;
+    }
+    localStorage.setItem("viewProfileUserId", id);
+    window.location.href = "../shared/profile.html";
+}
+</script>
+
+</body>
+</html>

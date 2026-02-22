@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PeerTutoria - Your Peer Tutoring Hub</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #2196F3;
+            --secondary-color: #FF4081;
+            --text-color: #333;
+            --background-color: #e3f2fd;
+            --card-background: #fff;
+            --border-radius: 12px;
+            --box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            font-family: "Poppins", sans-serif;
+            background: var(--background-color);
+            margin: 0;
+            color: var(--text-color);
+        }
+
+        .header {
+            background-image: linear-gradient(135deg, var(--primary-color), #42a5f5);
+            color: white;
+            padding: 80px 20px;
+            text-align: center;
+            border-bottom-left-radius: var(--border-radius);
+            border-bottom-right-radius: var(--border-radius);
+        }
+
+        .header h1 {
+            font-size: 3.5em;
+            margin: 0;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: -40px auto 40px;
+            padding: 0 20px;
+        }
+
+        .card-grid {
+            display: flex;
+            justify-content: center;
+            gap: 25px;
+            flex-wrap: wrap;
+        }
+
+        .card {
+            background: var(--card-background);
+            padding: 40px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            text-align: center;
+            min-width: 280px;
+            flex: 1;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .card:hover {
+            transform: translateY(-10px);
+        }
+
+        .btn {
+            display: block;
+            background-image: linear-gradient(45deg, var(--secondary-color), #FF8A80);
+            padding: 12px 30px;
+            border-radius: 50px;
+            color: white;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 20px;
+            text-decoration: none;
+            /* Ensure button looks like a button */
+            transition: background 0.3s ease;
+        }
+
+        .features-section {
+            text-align: center;
+            margin-top: 60px;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .feature-item h3 {
+            color: var(--primary-color);
+        }
+
+        .form-container {
+            display: none;
+            padding: 40px;
+            margin-top: 40px;
+            background: var(--card-background);
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+        }
+
+        .form-container.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            box-sizing: border-box;
+            font-family: "Poppins", sans-serif;
+        }
+
+        .form-toggle-link {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 0.9em;
+        }
+
+        .form-toggle-link a {
+            color: var(--primary-color);
+            cursor: pointer;
+            font-weight: 600;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="header">
+        <h1>PeerTutoria 🤝</h1>
+        <p>Your hub for connecting, learning, and growing with your peers.</p>
+    </div>
+
+    <div class="container">
+
+        <section class="card-grid" id="role-selection-section">
+            <div class="card" onclick="selectRole('student')">
+                <h2>I'm a Student 🤓</h2>
+                <p>Find the perfect peer tutor.</p>
+                <button class="btn">Get Help</button>
+            </div>
+
+            <div class="card" onclick="selectRole('peer')">
+                <h2>I'm a Peer 👨‍🏫</h2>
+                <p>Teach, guide and earn through tutoring.</p>
+                <button class="btn">Start Tutoring</button>
+            </div>
+        </section>
+
+        <section class="features-section">
+            <h2>Why Join PeerTutoria?</h2>
+            <div class="features-grid">
+                <div class="feature-item">
+                    <h3>Real-time Sessions</h3>
+                    <p>Instant chat & video sessions.</p>
+                </div>
+                <div class="feature-item">
+                    <h3>Build Your Profile</h3>
+                    <p>Showcase skills & attract students.</p>
+                </div>
+                <div class="feature-item">
+                    <h3>Verified Community</h3>
+                    <p>Learn safely in a trusted environment.</p>
+                </div>
+                <div class="feature-item">
+                    <h3>Resource Hub</h3>
+                    <p>Access notes, assignments & more.</p>
+                </div>
+            </div>
+        </section>
+
+        <div id="auth-form-container" class="form-container">
+            <h2 id="form-heading" style="text-align:center; margin-bottom:30px;"></h2>
+
+            <form id="auth-form">
+                <input type="hidden" id="userType">
+
+                <div class="form-group" id="name-group">
+                    <label for="name">Full Name:</label>
+                    <input type="text" id="name" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="email">Email:</label>
+                    <input type="email" id="email" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Password:</label>
+                    <input type="password" id="password" required>
+                </div>
+
+                <div id="peer-specific-fields">
+                    <div class="form-group">
+                        <label for="institute">Institute/University:</label>
+                        <input type="text" id="institute">
+                    </div>
+                    <div class="form-group">
+                        <label for="education">Highest Education:</label>
+                        <input type="text" id="education">
+                    </div>
+                    <div class="form-group">
+                        <label for="skills">Tutoring Skills (e.g., Calculus, Python, History):</label>
+                        <textarea id="skills" rows="3"></textarea>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn" id="submitBtn" style="width:100%;">Register</button>
+            </form>
+
+            <p class="form-toggle-link">
+                Already have an account?
+                <a onclick="toggleForm()">Login here.</a>
+            </p>
+        </div>
+
+    </div>
+    <script src="config.js"></script>
+    <script>
+        const roleSelectionSection = document.getElementById("role-selection-section");
+        const authFormContainer = document.getElementById("auth-form-container");
+        const formHeading = document.getElementById("form-heading");
+        const userTypeInput = document.getElementById("userType");
+        const peerFields = document.getElementById("peer-specific-fields");
+        const nameGroup = document.getElementById("name-group");
+        const submitBtn = document.getElementById("submitBtn");
+        const featuresSection = document.querySelector(".features-section");
+
+        let isLogin = false;
+
+        function selectRole(role) {
+            roleSelectionSection.style.display = "none";
+            featuresSection.style.display = "none";
+
+            authFormContainer.classList.add("active");
+            // Set the role and update heading for registration
+            userTypeInput.value = role;
+            formHeading.textContent = `Sign Up as a ${role.charAt(0).toUpperCase() + role.slice(1)}`;
+
+            // Show peer-specific fields only if the role is 'peer'
+            peerFields.style.display = role === "peer" ? "block" : "none";
+
+            isLogin = false; // Reset to registration mode
+            submitBtn.textContent = "Register";
+            nameGroup.style.display = "block";
+
+            // Ensure the toggle link reflects the current state
+            const linkText = document.querySelector(".form-toggle-link a");
+            linkText.textContent = "Login here.";
+        }
+
+        function toggleForm() {
+            if (!userTypeInput.value) {
+                alert("Please select Student or Peer first.");
+                return;
+            }
+
+            isLogin = !isLogin;
+            const linkText = document.querySelector(".form-toggle-link a");
+            const currentRole = userTypeInput.value;
+
+            if (isLogin) {
+                // --- Switch to Login ---
+                formHeading.textContent = "Login to PeerTutoria";
+                linkText.textContent = "Register here.";
+                submitBtn.textContent = "Login";
+                nameGroup.style.display = "none"; // Hide name field for login
+                document.getElementById("name").removeAttribute("required"); // Remove required for login
+                peerFields.style.display = "none"; // Hide peer fields for login
+            } else {
+                // --- Switch back to Register ---
+                formHeading.textContent = `Sign Up as a ${currentRole.charAt(0).toUpperCase() + currentRole.slice(1)}`;
+                linkText.textContent = "Login here.";
+                submitBtn.textContent = "Register";
+                nameGroup.style.display = "block"; // Show name field for registration
+                document.getElementById("name").setAttribute("required", "true"); // Add required back
+
+                // Show peer fields only if the original selected role was 'peer'
+                peerFields.style.display = currentRole === "peer" ? "block" : "none";
+            }
+        }
+
+        document.getElementById("auth-form").addEventListener("submit", function (e) {
+            e.preventDefault();
+
+            const user = {
+                name: document.getElementById("name").value,
+                email: document.getElementById("email").value,
+                password: document.getElementById("password").value,
+                role: userTypeInput.value, // This is crucial for both register and login API calls
+            };
+
+            // Only capture peer-specific data if it's a registration (not login) AND the role is 'peer'
+            if (!isLogin && user.role === "peer") {
+                user.institute = document.getElementById("institute").value;
+                user.education = document.getElementById("education").value;
+                user.skills = document.getElementById("skills").value;
+            } else {
+                // Clear unnecessary fields for non-peer or login scenarios
+                delete user.institute;
+                delete user.education;
+                delete user.skills;
+            }
+
+            /* ================= LOGIN ================= */
+            if (isLogin) {
+                // FIX: Ensure only necessary fields for login are sent (email, password, role)
+                const loginData = {
+                    email: user.email,
+                    password: user.password,
+                    role: user.role
+                };
+
+                fetch(`${BASE_URL}/api/login`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(loginData) // Sending fixed login data
+                })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.error) {
+                            alert(`Login failed: ${data.error}`);
+                            return;
+                        }
+
+                        localStorage.setItem("currentUser", JSON.stringify(data.user));
+
+                        if (data.user.role === "student") {
+                            window.location.href = "student/student_dashboard.html";
+                        } else {
+                            window.location.href = "peer/peer_dashboard.html";
+                        }
+                    })
+                    .catch((err) => {
+                        console.error("Login Fetch Error:", err);
+                        alert("Login failed. Check server connection (port 5000) and credentials.");
+                    });
+                return;
+            }
+
+
+            /* ================= REGISTER ================= */
+            fetch(`${BASE_URL}/api/register`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(user) // Sending full user object for registration
+            })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.error) {
+                        alert(`Registration failed: ${data.error}`);
+                        return;
+                    }
+
+                    // Store minimum user details upon successful registration
+                    const loggedUser = {
+                        name: user.name,
+                        email: user.email,
+                        role: user.role
+                    };
+
+                    localStorage.setItem("currentUser", JSON.stringify(loggedUser));
+
+                    alert("Registration successful! Redirecting to dashboard.");
+
+                    if (user.role === "student") {
+                        window.location.href = "student/student_dashboard.html";
+                    } else {
+                        window.location.href = "peer/peer_dashboard.html";
+                    }
+                })
+                .catch((err) => {
+                    console.error("Registration Fetch Error:", err);
+                    alert("Registration failed. Check server connection (port 5000).");
+                });
+        });
+    </script>
+
+</body>
+
+</html>

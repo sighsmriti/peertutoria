@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Settings - PeerTutoria</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<style>
+:root {
+    --primary:#2196F3;
+    --secondary:#FF4081;
+    --bg:#f1f6ff;
+    --white:white;
+    --radius:14px;
+    --shadow:0 8px 20px rgba(0,0,0,0.1);
+}
+
+body {
+    margin:0;
+    font-family:Poppins, sans-serif;
+    background:var(--bg);
+}
+
+.navbar {
+    background:var(--white);
+    padding:18px 40px;
+    box-shadow:var(--shadow);
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+}
+.navbar h2 { margin:0; color:var(--primary); }
+.navbar a { margin-left:18px; text-decoration:none; color:#333; }
+
+.container {
+    max-width:900px;
+    margin:auto;
+    padding:30px 50px;
+}
+
+.section-title {
+    font-size:24px;
+    font-weight:600;
+    margin-bottom:20px;
+}
+
+.card {
+    background:var(--white);
+    padding:20px;
+    margin-bottom:20px;
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+}
+
+.card label {
+    display:block;
+    margin-top:12px;
+    font-weight:500;
+}
+
+.card input, .card textarea {
+    width:100%;
+    padding:10px;
+    border:none;
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+    margin-top:6px;
+}
+
+button {
+    padding:10px 16px;
+    border:none;
+    border-radius:var(--radius);
+    cursor:pointer;
+    font-weight:500;
+}
+
+.save-btn { background:var(--primary); color:white; margin-top:15px; }
+.logout-btn { background:#444; color:white; width:100%; margin-top:10px; }
+.delete-btn { background:#e53935; color:white; width:100%; margin-top:10px; }
+</style>
+</head>
+
+<body>
+
+<div class="navbar">
+    <h2>PeerTutoria</h2>
+    <div>
+        <a href="#" onclick="goHome()">Home</a>
+        <a href="../shared/profile.html">Profile</a>
+        <a href="../shared/notifications.html">Notifications</a>
+        <a href="settings.html" style="font-weight:600; color:var(--secondary);">Settings</a>
+    </div>
+</div>
+
+<div class="container">
+
+<div class="section-title">Edit Profile</div>
+
+<div class="card">
+    <label>Full Name</label>
+    <input type="text" id="name">
+
+    <label>Institute / School</label>
+    <input type="text" id="institute">
+
+    <label>Contact Number</label>
+    <input type="text" id="contact">
+
+    <label>Subjects You Teach</label>
+    <input type="text" id="skills">
+
+    <label>Subjects You Are Learning</label>
+    <input type="text" id="learning">
+
+    <label>About You</label>
+    <textarea id="bio" rows="4"></textarea>
+
+    <button class="save-btn" onclick="saveProfile()">Save Profile</button>
+</div>
+
+<div class="card">
+    <button class="logout-btn" onclick="logout()">Logout</button>
+    <button class="delete-btn" onclick="deleteAccount()">Delete Account</button>
+</div>
+
+</div>
+
+<script src="../config.js"></script>
+
+<script>
+const user = JSON.parse(localStorage.getItem("currentUser"));
+if (!user) window.location.href = "../index.html";
+
+/* ---------- LOAD PROFILE ---------- */
+fetch(`${BASE_URL}/api/user/${user.email}`)
+.then(res => res.json())
+.then(data => {
+    document.getElementById("name").value = data.name || "";
+    document.getElementById("institute").value = data.institute || "";
+    document.getElementById("contact").value = data.contact || "";
+    document.getElementById("skills").value = data.skills || "";
+    document.getElementById("learning").value = data.learning || "";
+    document.getElementById("bio").value = data.bio || "";
+});
+
+/* ---------- SAVE PROFILE ---------- */
+function saveProfile() {
+    const updated = {
+        email: user.email,
+        name: document.getElementById("name").value,
+        institute: document.getElementById("institute").value,
+        contact: document.getElementById("contact").value,
+        skills: document.getElementById("skills").value,
+        learning: document.getElementById("learning").value,
+        bio: document.getElementById("bio").value
+    };
+
+    fetch(`${BASE_URL}/api/user/update`, {
+        method: "PUT",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify(updated)
+    })
+    .then(() => alert("Profile updated successfully"))
+    .catch(() => alert("Update failed"));
+}
+
+/* ---------- LOGOUT ---------- */
+function logout() {
+    localStorage.clear();
+    window.location.href = "../index.html";
+}
+
+/* ---------- DELETE ACCOUNT ---------- */
+function deleteAccount() {
+    const confirmDelete = confirm("Are you sure you want to delete your account permanently?");
+    if (!confirmDelete) return;
+
+    fetch(`${BASE_URL}/api/user/delete/${user.email}`, {
+        method: "DELETE"
+    })
+    .then(res => res.json())
+    .then(() => {
+        alert("Account deleted successfully");
+        localStorage.clear();
+        window.location.href = "../index.html";
+    })
+    .catch(() => alert("Failed to delete account"));
+}
+/* ---------- ROLE-BASED HOME ---------- */
+function goHome() {
+    const user = JSON.parse(localStorage.getItem("currentUser"));
+
+    if (!user) {
+        window.location.href = "../index.html";
+        return;
+    }
+
+    if (user.role === "peer") {
+        window.location.href = "../peer/peer_dashboard.html";
+    } else {
+        window.location.href = "../student/student_dashboard.html";
+    }
+}
+</script>
+
+</body>
+</html>

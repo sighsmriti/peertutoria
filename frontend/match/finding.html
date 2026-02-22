@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finding a Tutor...</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary: #2196F3;
+            --secondary: #FF4081;
+            --bg: #f1f6ff;
+            --white: #fff;
+            --radius: 14px;
+            --shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            margin: 0;
+            font-family: Poppins, sans-serif;
+            background: var(--bg);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .box {
+            background: var(--white);
+            padding: 40px;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            text-align: center;
+            width: 320px;
+        }
+
+        h2 {
+            margin-top: 0;
+            color: var(--primary);
+        }
+
+        .dots {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .dot {
+            width: 10px;
+            height: 10px;
+            margin: 0 6px;
+            background: var(--secondary);
+            border-radius: 50%;
+            animation: bounce 0.8s infinite alternate;
+        }
+
+        .dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes bounce {
+            from {
+                transform: translateY(0);
+                opacity: 0.5;
+            }
+
+            to {
+                transform: translateY(-10px);
+                opacity: 1;
+            }
+        }
+
+        .message {
+            margin-top: 15px;
+            font-size: 14px;
+            color: #666;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="box">
+        <h2 id="statusTitle">Connecting to the Tutor...</h2>
+        <p class="message" id="statusMsg">
+            Waiting for the tutor to respond.
+        </p>
+
+        <div class="dots">
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+        </div>
+    </div>
+
+    <!-- ✅ CONFIG (added) -->
+    <script src="../config.js"></script>
+
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script>
+        const sessionId = localStorage.getItem("pendingSessionId");
+        console.log("Finding Page Loaded. Pending Session ID:", sessionId);
+
+        if (!sessionId) {
+            alert("Error: No pending session found. Redirecting to dashboard.");
+            window.location.href = "../student/student_dashboard.html";
+        }
+
+        // connect socket (ONLY LINE CHANGED)
+        const socket = io(BASE_URL);
+
+        // join this session room
+        socket.emit("joinSession", sessionId);
+
+        // listen for accept
+        socket.on("sessionAccepted", () => {
+            console.log("SESSION ACCEPTED event received for session:", sessionId);
+            console.log("MOVING TO CHAT...");
+
+            localStorage.removeItem("pendingSessionId");
+            localStorage.setItem("currentSessionId", sessionId);
+
+            window.location.href = "../shared/chat_room.html";
+        });
+
+        // listen for reject
+        socket.on("sessionRejected", () => {
+            console.log("SESSION REJECTED event received");
+            document.getElementById("statusTitle").innerText = "Tutor not available";
+            document.getElementById("statusMsg").style.color = "red";
+            document.getElementById("statusMsg").innerText = "The tutor is not available at the moment.";
+            document.querySelector(".dots").style.display = "none";
+
+            setTimeout(() => {
+                localStorage.removeItem("pendingSessionId");
+                window.location.href = "../shared/profile.html";
+            }, 3000);
+        });
+
+        // timeout fallback (5 min)
+        setTimeout(() => {
+            localStorage.removeItem("pendingSessionId");
+            alert("Tutor did not respond");
+            window.location.href = "../match/match_tutor.html";
+        }, 5 * 60 * 1000);
+    </script>
+
+</body>
+</html>

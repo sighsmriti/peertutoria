@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Upload Notes - PeerTutoria</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<style>
+:root {
+    --primary: #2196F3;
+    --secondary: #FF4081;
+    --bg: #f1f6ff;
+    --white: white;
+    --radius: 14px;
+    --shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+}
+
+body {
+    margin: 0;
+    background: var(--bg);
+    font-family: Poppins, sans-serif;
+}
+
+/* NAVBAR */
+.navbar {
+    background: var(--white);
+    padding: 18px 40px;
+    box-shadow: var(--shadow);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.navbar h2 {
+    margin: 0;
+    color: var(--primary);
+}
+
+.navbar a {
+    margin-left: 18px;
+    text-decoration: none;
+    color: #333;
+}
+
+/* PAGE CONTAINER */
+.container {
+    padding: 40px 50px;
+}
+
+/* CARD */
+.card {
+    background: var(--white);
+    padding: 30px;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    max-width: 600px;
+    margin: auto;
+}
+
+/* TITLE */
+.card h2 {
+    margin-top: 0;
+    color: var(--primary);
+}
+
+/* INPUTS */
+input, textarea {
+    width: 100%;
+    padding: 12px;
+    border-radius: var(--radius);
+    border: 1px solid #ddd;
+    margin-bottom: 15px;
+    font-family: Poppins;
+    font-size: 14px;
+}
+
+textarea {
+    resize: vertical;
+    min-height: 90px;
+}
+
+/* BUTTON */
+button {
+    background: var(--primary);
+    color: white;
+    border: none;
+    padding: 12px;
+    border-radius: var(--radius);
+    font-weight: 500;
+    cursor: pointer;
+    width: 100%;
+    transition: 0.2s ease;
+}
+
+button:hover {
+    background: var(--secondary);
+}
+</style>
+</head>
+
+<body>
+
+<!-- NAVBAR -->
+<div class="navbar">
+    <h2>PeerTutoria</h2>
+    <div>
+        <a href="peer_dashboard.html">Home</a>
+        <a href="../shared/notifications.html">Notifications</a>
+        <a href="../shared/profile.html">Profile</a>
+        <a href="../shared/settings.html">Settings</a>
+    </div>
+</div>
+
+<div class="container">
+
+    <div class="card">
+        <h2>📘 Upload Notes</h2>
+
+        <form id="uploadForm">
+            <input type="text" name="title" placeholder="Title" required>
+            <input type="text" name="subject" placeholder="Subject" required>
+            <input type="text" name="topic" placeholder="Topic" required>
+            <input type="number" name="price" placeholder="Price (0 = free)" required>
+            <textarea name="description" placeholder="Description"></textarea>
+
+            <!-- auto user id -->
+            <input type="hidden" name="uploaded_by" id="uploaded_by">
+
+            <input type="file" name="file" required>
+
+            <button type="submit">Upload Notes</button>
+        </form>
+    </div>
+
+</div>
+
+<script src="../config.js"></script>
+
+<script>
+const user = JSON.parse(localStorage.getItem("currentUser"));
+
+if (!user) {
+    alert("Please login first");
+    window.location.href = "../index.html";
+}
+
+// auto fill uploader id
+document.getElementById("uploaded_by").value = user.id;
+
+document.getElementById("uploadForm").onsubmit = async (e) => {
+    e.preventDefault();
+
+    const formData = new FormData(e.target);
+
+    const res = await fetch(`${BASE_URL}/api/notes/upload`, {
+        method: "POST",
+        body: formData
+    });
+
+    const data = await res.json();
+    alert(data.success ? "Uploaded successfully!" : "Upload failed");
+};
+</script>
+
+</body>
+</html>

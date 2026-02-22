@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Notifications</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins&display=swap" rel="stylesheet">
+<style>
+:root {
+    --primary:#2196F3;
+    --secondary:#FF4081;
+    --bg:#f1f6ff;
+    --white:white;
+    --radius:14px;
+    --shadow:0 8px 20px rgba(0,0,0,0.1);
+}
+
+/* GLOBAL */
+body {
+    margin:0;
+    font-family:'Poppins', sans-serif;
+    background:var(--bg);
+    padding:20px;
+}
+
+/* NAVBAR */
+.navbar {
+    background:var(--white);
+    padding:18px 40px;
+    box-shadow:var(--shadow);
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    border-radius:12px;
+    margin-bottom:20px;
+}
+
+.navbar h2 {
+    margin:0;
+    color:var(--primary);
+}
+
+.navbar a {
+    margin-left:18px;
+    text-decoration:none;
+    color:#333;
+    font-weight:500;
+}
+
+/* PAGE TITLE */
+h2 {
+    margin-top:0;
+    color:#333;
+}
+
+/* NOTIFICATION CARD */
+.card {
+    background:white;
+    padding:15px;
+    margin-bottom:12px;
+    border-radius:12px;
+    box-shadow:0 4px 10px rgba(0,0,0,0.08);
+}
+
+.unread {
+    border-left:5px solid var(--primary);
+}
+
+small {
+    color:#777;
+}
+
+button {
+    margin-top:6px;
+    padding:6px 10px;
+    border:none;
+    border-radius:6px;
+    cursor:pointer;
+    background:#eee;
+}
+
+button:hover {
+    background:#ddd;
+}
+</style>
+</head>
+
+<body>
+<div class="navbar">
+    <h2>PeerTutoria</h2>
+    <div>
+        <a href="#" onclick="goHome()">Home</a>
+
+        <a href="profile.html"
+           onclick="localStorage.removeItem('viewProfileUserEmail')">
+           Profile
+        </a>
+
+        <a href="notifications.html"
+           style="font-weight:600; color:var(--secondary);">
+           Notifications
+        </a>
+
+        <a href="settings.html">Settings</a>
+    </div>
+</div>
+<h2>Notifications</h2>
+<div id="list"></div>
+
+<script src="../config.js"></script>
+
+<script>
+const user = JSON.parse(localStorage.getItem("currentUser"));
+const list = document.getElementById("list");
+
+fetch(`${BASE_URL}/api/notifications/${user.email}`)
+.then(res => res.json())
+.then(notifs => {
+  if (!notifs.length) {
+    list.innerHTML = "<p>No notifications</p>";
+    return;
+  }
+
+  notifs.forEach(n => {
+    const div = document.createElement("div");
+    div.className = "card " + (n.is_read ? "" : "unread");
+
+    div.innerHTML = `
+      <p>${n.message}</p>
+      <small>${new Date(n.created_at).toLocaleString()}</small><br>
+      ${!n.is_read ? `<button onclick="markRead(${n.id})">Mark Read</button>` : ""}
+      <button onclick="deleteNotif(${n.id})">Delete</button>
+    `;
+
+    list.appendChild(div);
+  });
+});
+
+function markRead(id) {
+  fetch(`${BASE_URL}/api/notifications/read/${id}`, { method: "POST" })
+    .then(() => location.reload());
+}
+
+function deleteNotif(id) {
+  fetch(`${BASE_URL}/api/notifications/${id}`, { method: "DELETE" })
+    .then(() => location.reload());
+}
+
+function goHome() {
+    const user = JSON.parse(localStorage.getItem("currentUser"));
+
+    if (!user) {
+        window.location.href = "../index.html";
+        return;
+    }
+
+    if (user.role === "peer") {
+        window.location.href = "../peer/peer_dashboard.html";
+    } else {
+        window.location.href = "../student/student_dashboard.html";
+    }
+}
+</script>
+
+</body>
+</html>

@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Profile - PeerTutoria</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<style>
+:root {
+    --primary:#2196F3;
+    --secondary:#FF4081;
+    --bg:#f1f6ff;
+    --white:white;
+    --radius:14px;
+    --shadow:0 8px 20px rgba(0,0,0,0.1);
+}
+
+body {
+    margin:0;
+    font-family:Poppins, sans-serif;
+    background:var(--bg);
+}
+
+.navbar {
+    background:var(--white);
+    padding:18px 40px;
+    box-shadow:var(--shadow);
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+}
+.navbar h2 { margin:0; color:var(--primary); }
+.navbar a { margin-left:18px; text-decoration:none; color:#333; }
+
+.container {
+    padding:30px 50px;
+    max-width:900px;
+    margin:auto;
+}
+
+.profile-header {
+    background:var(--white);
+    padding:25px;
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+    display:flex;
+    gap:25px;
+    align-items:center;
+}
+
+.profile-header img {
+    width:120px;
+    height:120px;
+    border-radius:50%;
+    object-fit:cover;
+    box-shadow:var(--shadow);
+}
+
+.badge-preview {
+    display:flex;
+    gap:10px;
+    margin-top:10px;
+}
+.badge-icon {
+    font-size:26px;
+    background:#f3f3f3;
+    padding:8px 12px;
+    border-radius:10px;
+}
+
+.section {
+    background:var(--white);
+    padding:20px;
+    margin-top:20px;
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+}
+
+.xp-bar {
+    height:12px;
+    background:#dce9ff;
+    border-radius:10px;
+    overflow:hidden;
+    margin-top:8px;
+}
+.xp-fill {
+    height:100%;
+    background:var(--secondary);
+}
+
+.action-btn {
+    margin-top:12px;
+    padding:10px 16px;
+    border:none;
+    border-radius:10px;
+    cursor:pointer;
+    font-weight:500;
+}
+
+#requestSessionBtn {
+    background:var(--secondary);
+    color:white;
+    display:none;
+}
+</style>
+</head>
+
+<body>
+
+<div class="navbar">
+    <h2>PeerTutoria</h2>
+    <div>
+        <a href="#" onclick="goHome()">Home</a>
+
+        <a href="profile.html"
+           style="font-weight:600; color:var(--secondary);"
+           onclick="localStorage.removeItem('viewProfileUserEmail')">Profile</a>
+        <a href="../shared/notifications.html">Notifications</a>
+        <a href="settings.html">Settings</a>
+    </div>
+</div>
+
+<div class="container">
+
+<div class="profile-header">
+    <img src="https://via.placeholder.com/120">
+
+    <div>
+        <h2 id="profileName">Loading...</h2>
+
+        <p><strong>Role:</strong> <span id="profileRole"></span></p>
+        <p><strong>School/University:</strong> <span id="profileInstitute"></span></p>
+        <p><strong>Email:</strong> <span id="profileEmail"></span></p>
+
+        <!-- ONLINE STATUS -->
+        <div id="statusBox" style="margin-top:8px;">
+            <span id="statusIndicator"></span>
+        </div>
+
+        <!-- TOGGLE (only own profile) -->
+        <label id="onlineToggleBox" style="display:none; margin-top:6px;">
+            <input type="checkbox" id="onlineToggle"> Set Online
+        </label>
+
+        <!-- REQUEST SESSION -->
+        <button id="requestSessionBtn" class="action-btn">Request Session</button>
+
+        <div id="ratingBox" style="margin-top:10px; display:none;">
+            <span id="ratingStars"></span>
+            <span id="ratingCount"></span>
+        </div>
+
+        <div class="badge-preview" id="badgeContainer"></div>
+    </div>
+</div>
+
+<div class="section">
+    <h3>Level & XP</h3>
+    <p><strong>Level:</strong> <span id="profileLevel"></span> —
+       <span id="profileXP"></span> XP</p>
+    <div class="xp-bar"><div id="xpFill" class="xp-fill"></div></div>
+</div>
+
+<div class="section">
+    <h3>Subjects</h3>
+    <p><strong>Learning:</strong> <span id="learningSubjects"></span></p>
+    <p><strong>Teaching:</strong> <span id="teachingSubjects"></span></p>
+</div>
+
+<div class="section">
+    <h3>About</h3>
+    <p id="aboutText"></p>
+</div>
+
+</div>
+
+<script src="../config.js"></script>
+
+<script src="../config.js"></script>
+
+<script>
+/* ================= GET CURRENT USER ================= */
+const currentUser = JSON.parse(localStorage.getItem("currentUser"));
+let profileUserId = localStorage.getItem("viewProfileUserId");
+
+/* If no tutor selected → open own profile */
+if (!profileUserId && currentUser) {
+    profileUserId = currentUser.id;
+}
+
+if (!currentUser || !profileUserId) {
+    alert("Invalid profile access");
+    window.location.href = "../index.html";
+}
+
+const viewingOwnProfile = Number(profileUserId) === Number(currentUser.id);
+
+/* ================= FETCH PROFILE ================= */
+fetch(`${BASE_URL}/api/user/profile/${profileUserId}`)
+.then(res => res.json())
+.then(data => {
+
+    /* -------- BASIC INFO -------- */
+    document.getElementById("profileName").innerText = data.name || "Unknown";
+    document.getElementById("profileRole").innerText = data.role || "Unknown";
+    document.getElementById("profileInstitute").innerText = data.institute || "Not provided";
+
+    /* Hide email for other users */
+    if (viewingOwnProfile) {
+        document.getElementById("profileEmail").innerText = data.email || "Not available";
+    } else {
+        document.getElementById("profileEmail").innerText = "Hidden";
+    }
+
+    document.getElementById("aboutText").innerText = data.bio || "No description added.";
+
+    /* -------- SUBJECTS (SAFE STRING/ARRAY) -------- */
+    document.getElementById("learningSubjects").innerText =
+        data.learning
+            ? (Array.isArray(data.learning) ? data.learning.join(", ") : data.learning)
+            : "None";
+
+    document.getElementById("teachingSubjects").innerText =
+        data.skills
+            ? (Array.isArray(data.skills) ? data.skills.join(", ") : data.skills)
+            : "None";
+
+    /* -------- XP & LEVEL -------- */
+    const xp = data.xp || 0;
+    const level = data.level || 1;
+    const progress = (xp % 100);
+
+    document.getElementById("profileXP").innerText = xp;
+    document.getElementById("profileLevel").innerText = level;
+    document.getElementById("xpFill").style.width = progress + "%";
+
+    /* -------- RATING (ONLY FOR PEER) -------- */
+    if (data.role === "peer") {
+        document.getElementById("ratingBox").style.display = "block";
+
+        if (data.rating_count && data.rating_count > 0) {
+            const avg = Number(data.rating || 0).toFixed(1);
+            document.getElementById("ratingStars").innerText =
+                "⭐".repeat(Math.round(avg)) + ` ${avg}`;
+            document.getElementById("ratingCount").innerText =
+                ` (${data.rating_count} ratings)`;
+        } else {
+            document.getElementById("ratingStars").innerText = "No ratings yet";
+        }
+    }
+
+    /* -------- ONLINE STATUS -------- */
+    const statusIndicator = document.getElementById("statusIndicator");
+    const toggleBox = document.getElementById("onlineToggleBox");
+    const toggle = document.getElementById("onlineToggle");
+
+    function renderStatus(isOnline) {
+        statusIndicator.innerText = isOnline ? "🟢 Online" : "⚫ Offline";
+    }
+
+    renderStatus(data.is_online);
+
+    /* Toggle only for own profile */
+    if (viewingOwnProfile) {
+        toggleBox.style.display = "block";
+        toggle.checked = !!data.is_online;
+
+        toggle.onchange = () => {
+            fetch(`${BASE_URL}/api/user/set-online`, {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({
+                    id: currentUser.id,
+                    is_online: toggle.checked
+                })
+            })
+            .then(() => renderStatus(toggle.checked))
+            .catch(() => alert("Failed to update status"));
+        };
+    }
+
+    /* -------- REQUEST SESSION (OTHER USER ONLY) -------- */
+    const requestBtn = document.getElementById("requestSessionBtn");
+
+    if (!viewingOwnProfile && data.role === "peer") {
+        requestBtn.style.display = "inline-block";
+
+        requestBtn.onclick = () => {
+            fetch(`${BASE_URL}/api/session/start`, {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({
+                    studentEmail: currentUser.email,
+                    tutorId: data.id,
+                    topic: "Requested from profile"
+                })
+            })
+            .then(res => res.json())
+            .then(s => {
+                if (s.sessionId) {
+                    localStorage.setItem("pendingSessionId", s.sessionId);
+                    window.location.href = "../match/finding.html";
+                }
+            });
+        };
+    }
+});
+
+/* ================= BADGES ================= */
+fetch(`${BASE_URL}/api/user/${profileUserId}/badges`)
+.then(res => res.json())
+.then(badges => {
+    const box = document.getElementById("badgeContainer");
+    box.innerHTML = "";
+
+    if (!badges || !badges.length) {
+        box.innerHTML = "<span>No badges yet</span>";
+        return;
+    }
+
+    badges.forEach(b => {
+        const badge = document.createElement("div");
+        badge.className = "badge-icon";
+        badge.title = b.name;
+        badge.innerText = "🏅";
+        box.appendChild(badge);
+    });
+});
+/* ---------- ROLE-BASED HOME ---------- */
+function goHome() {
+    const user = JSON.parse(localStorage.getItem("currentUser"));
+
+    if (!user) {
+        window.location.href = "../index.html";
+        return;
+    }
+
+    if (user.role === "peer") {
+        window.location.href = "../peer/peer_dashboard.html";
+    } else {
+        window.location.href = "../student/student_dashboard.html";
+    }
+}
+</script>
+
+</body>
+</html>

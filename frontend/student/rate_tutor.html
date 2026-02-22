@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Rate Tutor</title>
+
+<style>
+body {
+    font-family: Arial, sans-serif;
+    background: #f4f6ff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+}
+
+.card {
+    background: white;
+    padding: 30px;
+    border-radius: 12px;
+    width: 350px;
+    text-align: center;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+}
+
+select, textarea {
+    width: 100%;
+    margin-top: 12px;
+    padding: 8px;
+}
+
+button {
+    margin-top: 15px;
+    padding: 10px;
+    background: #2196F3;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+}
+</style>
+</head>
+
+<body>
+
+<div class="card">
+    <h2>Rate Your Tutor</h2>
+
+    <select id="rating">
+        <option value="">Select rating</option>
+        <option value="5">⭐⭐⭐⭐⭐</option>
+        <option value="4">⭐⭐⭐⭐</option>
+        <option value="3">⭐⭐⭐</option>
+        <option value="2">⭐⭐</option>
+        <option value="1">⭐</option>
+    </select>
+
+    <textarea id="review" placeholder="Optional review"></textarea>
+
+    <button onclick="submitRating()">Submit</button>
+</div>
+
+<!-- ✅ CONFIG (added) -->
+<script src="../config.js"></script>
+
+<script>
+/* ---------- AUTH + SESSION CHECK ---------- */
+const user = JSON.parse(localStorage.getItem("currentUser"));
+const sessionId = localStorage.getItem("lastCompletedSession");
+
+if (!user || !sessionId) {
+    alert("Invalid access");
+    window.location.href = "student_dashboard.html";
+}
+
+/* ---------- FETCH SESSION TO GET TUTOR ---------- */
+let tutorId = null;
+
+fetch(`${BASE_URL}/api/sessions/${sessionId}`)
+    .then(res => res.json())
+    .then(session => {
+        tutorId = session.tutor_id;
+    })
+    .catch(() => {
+        alert("Failed to load session");
+        window.location.href = "student_dashboard.html";
+    });
+
+/* ---------- SUBMIT RATING ---------- */
+function submitRating() {
+    const rating = document.getElementById("rating").value;
+    const review = document.getElementById("review").value;
+
+    if (!rating) {
+        alert("Please select a rating");
+        return;
+    }
+
+    if (!tutorId) {
+        alert("Session still loading. Please wait.");
+        return;
+    }
+
+    fetch(`${BASE_URL}/api/ratings`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            sessionId,
+            tutorId,
+            studentId: user.id,
+            rating,
+            review
+        })
+    })
+    .then(res => res.json())
+    .then(() => {
+        localStorage.removeItem("lastCompletedSession");
+        alert("Thanks for your feedback!");
+        window.location.href = "student_dashboard.html";
+    })
+    .catch(() => {
+        alert("Rating submission failed");
+    });
+}
+</script>
+
+</body>
+</html>

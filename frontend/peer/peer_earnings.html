@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Earnings - PeerTutoria</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+body{margin:0;font-family:Poppins;background:#f1f6ff;}
+.container{padding:30px 50px;}
+.card{background:white;padding:20px;border-radius:12px;box-shadow:0 4px 10px rgba(0,0,0,0.1);margin-bottom:20px;}
+table{width:100%;border-collapse:collapse;}
+th,td{padding:10px;border-bottom:1px solid #ddd;text-align:left;}
+th{background:#2196F3;color:white;}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h2>💰 Earnings Dashboard</h2>
+
+<div class="card">
+<h3 id="totalEarned">Total Earned: ₹0</h3>
+<h4 id="totalPlatform">Platform Cut: ₹0</h4>
+</div>
+
+<div class="card">
+<h3>Monthly Earnings</h3>
+<canvas id="earningsChart"></canvas>
+</div>
+
+<div class="card">
+<h3>Sales History</h3>
+<table>
+<thead>
+<tr>
+<th>Note</th>
+<th>Buyer</th>
+<th>Paid</th>
+<th>Platform</th>
+<th>You Earned</th>
+<th>Date</th>
+</tr>
+</thead>
+<tbody id="salesTable"></tbody>
+</table>
+</div>
+
+</div>
+
+<script src="../config.js"></script>
+<script>
+const user = JSON.parse(localStorage.getItem("currentUser"));
+if(!user) window.location.href="../index.html";
+
+/* ================= LOAD EARNINGS ================= */
+async function loadEarnings(){
+
+    const res = await fetch(`${BASE_URL}/api/peer/earnings/${user.id}`);
+    const data = await res.json();
+
+    let totalEarned = 0;
+    let totalPlatform = 0;
+
+    const table = document.getElementById("salesTable");
+    table.innerHTML = "";
+
+    data.forEach(row=>{
+        totalEarned += Number(row.peer_earning);
+        totalPlatform += Number(row.platform_cut);
+
+        const date = new Date(row.purchased_at).toLocaleString();
+
+        table.innerHTML += `
+        <tr>
+            <td>${row.title}</td>
+            <td>${row.buyer_name}</td>
+            <td>₹${row.amount_paid}</td>
+            <td>₹${row.platform_cut}</td>
+            <td>₹${row.peer_earning}</td>
+            <td>${date}</td>
+        </tr>`;
+    });
+
+    document.getElementById("totalEarned").innerText =
+        "Total Earned: ₹" + totalEarned.toFixed(2);
+
+    document.getElementById("totalPlatform").innerText =
+        "Platform Cut: ₹" + totalPlatform.toFixed(2);
+}
+
+/* ================= MONTHLY GRAPH ================= */
+async function loadGraph(){
+
+    const res = await fetch(`${BASE_URL}/api/peer/earnings/monthly/${user.id}`);
+    const data = await res.json();
+
+    const labels = data.map(d=>d.month);
+    const values = data.map(d=>d.total_earning);
+
+    new Chart(document.getElementById("earningsChart"),{
+        type:"line",
+        data:{
+            labels:labels,
+            datasets:[{
+                label:"Monthly Earnings",
+                data:values,
+                fill:false,
+                tension:0.3
+            }]
+        }
+    });
+}
+
+loadEarnings();
+loadGraph();
+</script>
+
+</body>
+</html>

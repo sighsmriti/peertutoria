@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Leaderboard - PeerTutoria</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<style>
+:root {
+    --primary:#2196F3;
+    --secondary:#FF4081;
+    --bg:#f1f6ff;
+    --white:#fff;
+    --radius:14px;
+    --shadow:0 8px 20px rgba(0,0,0,0.1);
+}
+
+body {
+    margin:0;
+    font-family:Poppins, sans-serif;
+    background:var(--bg);
+}
+
+/* NAVBAR */
+.navbar {
+    background:var(--white);
+    padding:18px 40px;
+    box-shadow:var(--shadow);
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+}
+.navbar h2 { margin:0; color:var(--primary); }
+.navbar a { margin-left:18px; text-decoration:none; color:#333; }
+
+/* CONTENT */
+.container { padding:30px 50px; }
+
+.section-title {
+    font-size:22px;
+    font-weight:600;
+    margin-bottom:15px;
+}
+
+/* LEADERBOARD */
+.leaderboard-list {
+    background:var(--white);
+    padding:20px;
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+}
+
+.row {
+    display:flex;
+    justify-content:space-between;
+    padding:12px 0;
+    border-bottom:1px solid #ececec;
+}
+
+.row:last-child { border-bottom:none; }
+
+.rank {
+    font-weight:600;
+    width:40px;
+}
+
+.name { flex:1; }
+
+.points {
+    font-weight:600;
+    color:var(--secondary);
+}
+</style>
+</head>
+
+<body>
+
+<!-- AUTH CHECK -->
+<script>
+const currentUser = JSON.parse(localStorage.getItem("currentUser"));
+if (!currentUser) {
+    alert("Please login first");
+    window.location.href = "../index.html";
+}
+</script>
+
+<!-- NAVBAR -->
+<div class="navbar">
+    <h2>PeerTutoria</h2>
+    <div>
+        <a href="student_dashboard.html">Home</a>
+        <a href="../shared/notifications.html">Notifications</a>
+        <a href="../shared/profile.html"
+           onclick="localStorage.removeItem('viewProfileUserEmail')">
+           Profile
+        </a>
+        <a href="../shared/settings.html">Settings</a>
+        <a href="../peer/peer_dashboard.html" style="color:var(--secondary); font-weight:600;">
+            Tutor Mode
+        </a>
+    </div>
+</div>
+
+<div class="container">
+
+    <div class="section-title">🏆 Leaderboard</div>
+
+    <div class="leaderboard-list" id="leaderboard">
+        Loading leaderboard...
+    </div>
+
+</div>
+
+<!-- ✅ CONFIG (added) -->
+<script src="../config.js"></script>
+
+<!-- FETCH LEADERBOARD -->
+<script>
+fetch(`${BASE_URL}/api/leaderboard`)
+    .then(res => res.json())
+    .then(users => {
+        const board = document.getElementById("leaderboard");
+        board.innerHTML = "";
+
+        users.forEach((u, index) => {
+            const row = document.createElement("div");
+            row.className = "row";
+
+            row.innerHTML = `
+                <div class="rank">${index + 1}</div>
+                <div class="name">${u.name} (${u.role})</div>
+                <div class="points">${u.xp} XP</div>
+            `;
+
+            board.appendChild(row);
+        });
+    })
+    .catch(() => {
+        document.getElementById("leaderboard").innerText = "Failed to load leaderboard";
+    });
+</script>
+
+</body>
+</html>

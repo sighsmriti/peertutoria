@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Live Chat - PeerTutoria</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<style>
+:root {
+    --primary:#2196F3;
+    --secondary:#FF4081;
+    --bg:#f1f6ff;
+    --white:#fff;
+    --radius:12px;
+    --shadow:0 4px 10px rgba(0,0,0,0.1);
+}
+
+body {
+    margin:0;
+    font-family:Poppins, sans-serif;
+    background:var(--bg);
+    height:100vh;
+    display:flex;
+    flex-direction:column;
+}
+
+/* HEADER */
+.header {
+    background:var(--white);
+    padding:12px 20px;
+    box-shadow:var(--shadow);
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+}
+.header h3 { 
+    margin:0; 
+    color:var(--primary); 
+    font-size:18px;
+}
+
+/* CHAT AREA */
+.chat-container {
+    flex:1;
+    padding:15px 20px;
+    overflow-y:auto;
+}
+
+/* CHAT BUBBLES */
+.message {
+    margin-bottom:10px;
+    max-width:65%;
+    padding:8px 12px;
+    border-radius:12px;
+    font-size:14px;
+    line-height:1.3;
+    box-shadow:0 2px 6px rgba(0,0,0,0.08);
+}
+
+.me {
+    background:var(--primary);
+    color:white;
+    margin-left:auto;
+    border-bottom-right-radius:4px;
+}
+
+.tutor {
+    background:white;
+    color:#333;
+    border-bottom-left-radius:4px;
+}
+
+/* SESSION ACTION BUTTONS */
+.session-actions {
+    display:flex;
+    gap:10px;
+    padding:10px 20px;
+}
+
+.session-actions button {
+    padding:8px 14px;
+    border:none;
+    border-radius:var(--radius);
+    cursor:pointer;
+    font-size:13px;
+}
+
+.video-btn { background:var(--secondary); color:white; }
+.end-btn { background:#e53935; color:white; }
+
+/* INPUT AREA */
+.input-area {
+    display:flex;
+    padding:10px 20px;
+    background:white;
+    box-shadow:0 -2px 8px rgba(0,0,0,0.05);
+}
+
+.input-area input {
+    flex:1;
+    padding:10px;
+    border-radius:var(--radius);
+    border:none;
+    font-size:14px;
+    background:#f4f7ff;
+}
+
+.input-area button {
+    margin-left:10px;
+    padding:10px 12px;
+    border:none;
+    border-radius:var(--radius);
+    cursor:pointer;
+    background:var(--primary);
+    color:white;
+    font-size:13px;
+}
+</style>
+
+<!-- ✅ CONFIG (added) -->
+<script src="../config.js"></script>
+
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+<script>
+const sessionId = localStorage.getItem("currentSessionId");
+const user = JSON.parse(localStorage.getItem("currentUser"));
+
+document.addEventListener("DOMContentLoaded", () => {
+    document.getElementById("chatTitle").innerText =
+        user.role === "peer" ? "Chat with Student" : "Chat with Tutor";
+});
+
+if (!sessionId || !user) {
+    alert("No active session");
+    window.location.href = "../student/student_dashboard.html";
+}
+
+/* ---------------- SOCKET SETUP ---------------- */
+const socket = io(BASE_URL);
+
+socket.emit("joinSession", sessionId);
+
+socket.on("chatMessage", data => {
+    const box = document.getElementById("chatBox");
+
+    const msg = document.createElement("div");
+    msg.className = "message " + (data.sender === user.name ? "me" : "tutor");
+
+    msg.innerHTML = data.message;
+    box.appendChild(msg);
+
+    box.scrollTop = box.scrollHeight;
+});
+
+/* ---------------- CHAT ---------------- */
+function sendMessage() {
+    const input = document.getElementById("messageInput");
+    if (!input.value.trim()) return;
+
+    socket.emit("chatMessage", {
+        sessionId,
+        sender: user.name,
+        message: input.value
+    });
+
+    input.value = "";
+}
+
+/* ---------------- END SESSION ---------------- */
+function endSession() {
+    document.querySelector(".end-btn").disabled = true;
+
+    fetch(`${BASE_URL}/api/sessions/${sessionId}/complete`, {
+        method: "PUT"
+    });
+}
+
+/* ---------------- SESSION ENDED ---------------- */
+socket.on("sessionEnded", () => {
+    const box = document.getElementById("chatBox");
+    const notice = document.createElement("div");
+    notice.style.textAlign = "center";
+    notice.style.color = "#777";
+    notice.style.margin = "10px 0";
+    notice.innerText = "Session has ended";
+
+    box.appendChild(notice);
+
+    setTimeout(() => {
+        localStorage.setItem("lastCompletedSession", sessionId);
+        localStorage.removeItem("currentSessionId");
+
+        if (user.role === "peer") {
+            window.location.href = "../peer/peer_dashboard.html";
+        } else {
+            window.location.href = "../student/rate_tutor.html";
+        }
+    }, 1500);
+});
+/* ---------------- SWITCH TO VIDEO ---------------- */
+socket.on("switchToVideo", () => {
+    const accept = confirm("The other user wants to switch to video call. Accept?");
+
+    if (accept) {
+        socket.emit("videoAccepted", sessionId);
+        window.location.href = "../shared/video_session.html";
+    } else {
+        socket.emit("videoRejected", sessionId);
+    }
+});
+socket.on("videoAccepted", () => {
+    window.location.href = "../shared/video_session.html";
+});
+
+socket.on("videoRejected", () => {
+    alert("The other user declined the video call.");
+});
+function switchToVideo() {
+    console.log("📹 Requesting switch to video");
+    socket.emit("switchToVideo", sessionId);
+}
+</script>
+</head>
+
+<body>
+
+<div class="header">
+    <h3 id="chatTitle"></h3>
+</div>
+
+<div class="chat-container" id="chatBox"></div>
+
+<div class="session-actions">
+    <button class="video-btn" onclick="switchToVideo()">Switch to Video</button>
+    <button class="end-btn" onclick="endSession()">End Session</button>
+</div>
+
+<div class="input-area">
+    <input
+        type="text"
+        id="messageInput"
+        placeholder="Type a message..."
+        onkeydown="if(event.key === 'Enter') sendMessage()"
+    >
+    <button onclick="sendMessage()">Send</button>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Sessions - PeerTutoria</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<style>
+:root {
+    --primary:#2196F3;
+    --secondary:#FF4081;
+    --bg:#f1f6ff;
+    --white:#fff;
+    --radius:14px;
+    --shadow:0 8px 20px rgba(0,0,0,0.1);
+}
+
+body {
+    margin:0;
+    font-family:Poppins, sans-serif;
+    background:var(--bg);
+}
+
+/* NAVBAR */
+.navbar {
+    background:var(--white);
+    padding:18px 40px;
+    box-shadow:var(--shadow);
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+}
+.navbar h2 { margin:0; color:var(--primary); }
+.navbar a { margin-left:18px; text-decoration:none; color:#333; }
+
+/* PAGE CONTENT */
+.container { padding:30px 50px; }
+
+.section-title {
+    font-size:22px;
+    font-weight:600;
+    margin-bottom:15px;
+}
+
+/* SESSION CARD */
+.session-card {
+    background:var(--white);
+    padding:20px;
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+    margin-bottom:20px;
+}
+
+.session-card h3 {
+    margin:0 0 8px 0;
+}
+
+.session-card p {
+    margin:6px 0;
+}
+
+.session-card button {
+    padding:10px 18px;
+    border:none;
+    border-radius:var(--radius);
+    cursor:pointer;
+    margin-right:10px;
+    margin-top:10px;
+}
+
+.join-btn { background:var(--primary); color:white; }
+.disabled-btn {
+    background:#ccc;
+    color:#666;
+    cursor:not-allowed;
+}
+</style>
+</head>
+
+<body>
+
+<!-- NAVBAR -->
+<div class="navbar">
+    <h2>PeerTutoria</h2>
+    <div>
+        <a href="student_dashboard.html">Home</a>
+        <a href="../shared/notifications.html">Notifications</a>
+        <a href="../shared/profile.html"
+           onclick="localStorage.removeItem('viewProfileUserEmail')">
+           Profile
+        </a>
+        <a href="../shared/settings.html">Settings</a>
+    </div>
+</div>
+
+<div class="container">
+
+    <!-- UPCOMING -->
+    <div class="section-title">Upcoming Sessions</div>
+    <div id="upcomingSessions"></div>
+
+    <br>
+
+    <!-- PAST -->
+    <div class="section-title">Past Sessions</div>
+    <div id="pastSessions"></div>
+
+</div>
+
+<!-- ✅ CONFIG -->
+<script src="../config.js"></script>
+
+<script>
+/* ---------------- AUTH CHECK ---------------- */
+const user = JSON.parse(localStorage.getItem("currentUser"));
+if (!user) {
+    alert("Please login first");
+    window.location.href = "../index.html";
+}
+
+const upcomingBox = document.getElementById("upcomingSessions");
+const pastBox = document.getElementById("pastSessions");
+
+/* ---------------- FETCH SESSIONS ---------------- */
+fetch(`${BASE_URL}/api/student/${user.id}/sessions`)
+    .then(res => res.json())
+    .then(sessions => {
+        upcomingBox.innerHTML = "";
+        pastBox.innerHTML = "";
+
+        if (!sessions || sessions.length === 0) {
+            pastBox.innerHTML = "<p>No sessions yet.</p>";
+            return;
+        }
+
+        sessions.forEach(s => {
+            const card = document.createElement("div");
+            card.className = "session-card";
+
+            // COMPLETED → RATE
+            if (s.status === "completed") {
+                card.innerHTML = `
+                    <h3>${s.topic} with ${s.tutor_name}</h3>
+                    <p>📅 Completed</p>
+                    <button class="join-btn"
+                        onclick="rateTutor(${s.tutor_id}, ${s.id})">
+                        Rate Tutor
+                    </button>
+                `;
+                pastBox.appendChild(card);
+            }
+
+            // ACCEPTED → UPCOMING
+            else if (s.status === "accepted") {
+                card.innerHTML = `
+                    <h3>${s.topic} with ${s.tutor_name}</h3>
+                    <p>⏳ Session accepted</p>
+                    <button class="disabled-btn" disabled>
+                        Join (coming soon)
+                    </button>
+                `;
+                upcomingBox.appendChild(card);
+            }
+        });
+    })
+    .catch(err => {
+        console.error(err);
+        pastBox.innerHTML = "<p>Error loading sessions.</p>";
+    });
+
+/* ---------------- RATE TUTOR ---------------- */
+function rateTutor(tutorId, sessionId) {
+    localStorage.setItem("rateTutorId", tutorId);
+    localStorage.setItem("rateSessionId", sessionId);
+    window.location.href = "rate_tutor.html";
+}
+</script>
+
+</body>
+</html>

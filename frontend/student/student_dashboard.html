@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Dashboard - PeerTutoria</title>
+
+    <!-- Google Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary: #2196F3;
+            --secondary: #FF4081;
+            --bg: #f1f6ff;
+            --white: #fff;
+            --text: #333;
+            --radius: 14px;
+            --shadow: 0 8px 20px rgba(0,0,0,0.1);
+        }
+        body {
+            margin: 0;
+            font-family: "Poppins", sans-serif;
+            background: var(--bg);
+            color: var(--text);
+        }
+
+        /* NAVIGATION */
+        .navbar {
+            background: var(--white);
+            padding: 20px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: var(--shadow);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .navbar h2 { color: var(--primary); margin: 0; }
+        .nav-links a {
+            margin-left: 20px;
+            text-decoration: none;
+            font-weight: 500;
+            color: var(--text);
+        }
+        .nav-links a:hover { color: var(--primary); }
+
+        /* DASHBOARD CONTAINER */
+        .container { padding: 30px 50px; }
+
+        /* WELCOME HEADER */
+        .welcome-box {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 30px;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            margin-bottom: 30px;
+        }
+        .welcome-box h1 { margin: 0; font-weight: 600; }
+
+        /* SEARCH BAR */
+        .search-bar { margin: 20px 0; display: flex; gap: 10px; }
+        .search-bar input {
+            flex: 1;
+            padding: 12px 15px;
+            border-radius: var(--radius);
+            border: none;
+            box-shadow: var(--shadow);
+            font-size: 15px;
+        }
+        .search-bar button {
+            padding: 12px 20px;
+            background: var(--primary); color: white;
+            border: none; border-radius: var(--radius);
+            cursor: pointer; transition: 0.3s;
+        }
+        .search-bar button:hover { background: #0b7dda; }
+
+        /* XP STATS */
+        .xp-card {
+            background: var(--white);
+            padding: 20px;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            margin-bottom: 30px;
+        }
+        .xp-bar {
+            height: 12px;
+            background: #dbe7ff;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .xp-fill {
+            height: 100%;
+            width: 45%;
+            background: var(--secondary);
+        }
+
+        /* QUICK LINKS */
+        .quick-links {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+        .link-card {
+            background: var(--white);
+            padding: 20px;
+            text-align: center;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            cursor: pointer;
+            transition: 0.3s;
+            font-weight: 500;
+        }
+        .link-card:hover { transform: translateY(-5px); }
+
+        /* SECTIONS */
+        .section-title { font-size: 22px; font-weight: 600; margin-bottom: 15px; }
+        .tutor-list { display: flex; gap: 20px; overflow-x: auto; padding-bottom: 10px; }
+        .tutor-card {
+            min-width: 250px;
+            background: var(--white);
+            padding: 20px;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+        }
+        .session-card {
+            background: var(--white);
+            padding: 20px;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            margin-bottom: 20px;
+        }
+
+        .instant-box {
+            background: var(--white);
+            padding: 25px;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            margin-bottom: 30px;
+        }
+        .instant-box h3 { margin-top: 0; color: var(--primary); }
+        .instant-search { display: flex; gap: 10px; margin-top: 12px; }
+        .instant-search input {
+            flex: 1;
+            padding: 12px 15px;
+            border-radius: var(--radius);
+            border: none;
+            box-shadow: var(--shadow);
+        }
+        .instant-search button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: var(--radius);
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- NAVBAR -->
+    <div class="navbar">
+        <h2>PeerTutoria</h2>
+        <div class="nav-links">
+            <a href="student_dashboard.html">Home</a>
+            <a href="../shared/notifications.html">Notifications</a>
+            <a href="../shared/profile.html"
+               onclick="localStorage.removeItem('viewProfileUserEmail')">
+               Profile
+            </a>
+            <a href="../shared/settings.html">Settings</a>
+        </div>
+    </div>
+
+    <div class="container">
+
+        <!-- WELCOME -->
+        <div class="welcome-box">
+            <h1>Welcome back, Student! 👋</h1>
+            <p>Ready to continue learning today?</p>
+        </div>
+
+        <!-- INSTANT MATCH -->
+        <div class="instant-box">
+            <h3>Start an Instant Session</h3>
+            <p>Type a topic and get connected to a tutor immediately.</p>
+
+            <div class="instant-search">
+                <input id="searchInput" type="text" placeholder="Enter topic (e.g., Algebra, Python loops)">
+                <button onclick="startMatching()">Find</button>
+            </div>
+        </div>
+
+        <!-- XP CARD -->
+        <div class="xp-card">
+            <h3>Your Progress</h3>
+            <p><strong>Level <span id="homeLevel">1</span></strong> · 
+            <span id="homeXP">0</span> XP</p>
+
+            <div class="xp-bar">
+                <div id="homeXpFill" class="xp-fill"></div>
+            </div>
+        </div>
+
+        <!-- QUICK LINKS -->
+        <div class="section-title">Quick Actions</div>
+        <div class="quick-links">
+            <a href="student_sessions.html" style="text-decoration:none;">
+                <div class="link-card">🎥 My Sessions</div>
+            </a>
+            <a href="student_notes_market.html" style="text-decoration:none;">
+                <div class="link-card">📄 Notes & Materials</div>
+            </a>
+            <a href="student_rewards.html" style="text-decoration:none;">
+                <div class="link-card">🧸 Rewards & Badges</div>
+            </a>
+            <a href="leaderboard.html" style="text-decoration:none;">
+                <div class="link-card">🏆 Leaderboard</div>
+            </a>
+            <a href="student_purchases.html" style="text-decoration:none;">
+                <div class="link-card">🧾 Purchases</div>
+            </a>
+        </div>
+
+        <!-- (rest of static content unchanged) -->
+
+    </div>
+
+    <!-- ✅ CONFIG (added) -->
+    <script src="../config.js"></script>
+
+    <script>
+const user = JSON.parse(localStorage.getItem("currentUser"));
+
+if (!user) {
+  window.location.href = "../index.html";
+}
+
+fetch(`${BASE_URL}/api/user/${user.email}`)
+  .then(res => res.json())
+  .then(data => {
+      const xp = data.xp || 0;
+      const level = data.level || 1;
+      const xpForLevel = 100;
+
+      const progress = (xp % xpForLevel) / xpForLevel * 100;
+
+      document.getElementById("homeXP").innerText = xp;
+      document.getElementById("homeLevel").innerText = level;
+      document.getElementById("homeXpFill").style.width = progress + "%";
+  });
+
+function startMatching() {
+    const topic = document.getElementById("searchInput").value;
+    localStorage.setItem("searchTopic", topic);
+    window.location.href = "../match/match_tutor.html";
+}
+    </script>
+
+</body>
+</html>

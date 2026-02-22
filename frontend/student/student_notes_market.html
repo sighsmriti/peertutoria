@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Notes Marketplace - PeerTutoria</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<style>
+:root {
+    --primary:#2196F3;
+    --secondary:#FF4081;
+    --bg:#f1f6ff;
+    --white:white;
+    --radius:14px;
+    --shadow:0 8px 20px rgba(0,0,0,0.1);
+}
+body{margin:0;background:var(--bg);font-family:Poppins,sans-serif;}
+.navbar{background:var(--white);padding:18px 40px;box-shadow:var(--shadow);display:flex;justify-content:space-between;align-items:center;}
+.navbar h2{margin:0;color:var(--primary);}
+.navbar a{margin-left:18px;text-decoration:none;color:#333;}
+
+.container{padding:40px 50px;}
+.search-box{background:var(--white);padding:20px;border-radius:var(--radius);box-shadow:var(--shadow);margin-bottom:30px;display:flex;gap:15px;flex-wrap:wrap;}
+input,select{padding:10px;border-radius:var(--radius);border:1px solid #ddd;font-family:Poppins;}
+button{background:var(--primary);color:white;border:none;padding:10px 18px;border-radius:var(--radius);cursor:pointer;}
+button:hover{background:var(--secondary);}
+
+.notes-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px;}
+.note-card{background:var(--white);padding:20px;border-radius:var(--radius);box-shadow:var(--shadow);}
+.note-card h3{margin-top:0;color:var(--primary);}
+.price-badge{font-weight:600;margin-top:5px;}
+</style>
+</head>
+
+<body>
+
+<div class="navbar">
+    <h2>PeerTutoria</h2>
+    <div>
+        <a href="#" onclick="goHome()">Home</a>
+        <a href="../shared/profile.html">Profile</a>
+    </div>
+</div>
+
+<div class="container">
+
+<h2>📚 Notes Marketplace</h2>
+
+<div class="search-box">
+    <input type="text" id="searchTopic" placeholder="Search topic">
+    <select id="filter">
+        <option value="all">All</option>
+        <option value="free">Free</option>
+        <option value="paid">Paid</option>
+    </select>
+    <button onclick="searchNotes()">Search</button>
+</div>
+
+<div id="notesList" class="notes-grid"></div>
+
+</div>
+
+<script src="../config.js"></script>
+
+<script>
+const user = JSON.parse(localStorage.getItem("currentUser"));
+if(!user) window.location.href="../index.html";
+
+/* ---------- SEARCH NOTES ---------- */
+async function searchNotes() {
+    const topic = document.getElementById("searchTopic").value;
+    const filter = document.getElementById("filter").value;
+
+    const res = await fetch(`${BASE_URL}/api/notes/search?topic=${topic}&filter=${filter}`);
+    const notes = await res.json();
+
+    const list = document.getElementById("notesList");
+    list.innerHTML = "";
+
+    if(!notes.length){
+        list.innerHTML="<p>No notes found</p>";
+        return;
+    }
+
+    for(const note of notes){
+        let actionBtn="";
+
+        /* FREE NOTE */
+        if(note.price==0){
+            actionBtn = `
+                <button onclick="openNote(${note.id})">
+                    View
+                </button>`;
+        }
+        else{
+            /* CHECK IF PURCHASED */
+            const check = await fetch(`${BASE_URL}/api/notes/check-purchase/${note.id}/${user.id}`);
+            const data = await check.json();
+
+            if(data.purchased){
+                actionBtn = `
+                    <button onclick="openNote(${note.id})">
+                        View
+                    </button>`;
+            } else {
+                actionBtn = `
+                    <button onclick="buyNote(${note.id}, ${note.price})">
+                        Buy ₹${note.price}
+                    </button>`;
+            }
+        }
+
+        list.innerHTML += `
+            <div class="note-card">
+                <h3>${note.title}</h3>
+                <p><b>Subject:</b> ${note.subject}</p>
+                <p><b>Topic:</b> ${note.topic}</p>
+                <p><b>Uploaded by:</b> ${note.uploader_name}</p>
+                <p class="price-badge">
+                    ${note.price==0 ? "🟢 Free" : "💰 ₹"+note.price}
+                </p>
+                ${actionBtn}
+            </div>
+        `;
+    }
+}
+
+/* ---------- BUY NOTE ---------- */
+async function buyNote(noteId, price){
+    const confirmBuy = confirm(`Buy this note for ₹${price}?`);
+    if(!confirmBuy) return;
+
+    const res = await fetch(`${BASE_URL}/api/notes/fake-purchase`,{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({
+            noteId:noteId,
+            studentId:user.id
+        })
+    });
+
+    const data = await res.json();
+
+    if(data.success){
+        alert("Purchase successful!");
+        searchNotes();
+    } else {
+        alert(data.error || "Purchase failed");
+    }
+}
+
+/* ---------- DOWNLOAD ---------- */
+
+    function openNote(noteId) {
+    window.location.href = `note_viewer.html?noteId=${noteId}`;
+}
+
+
+/* ---------- ROLE BASED HOME ---------- */
+function goHome(){
+    if(user.role==="peer"){
+        window.location.href="../peer/peer_dashboard.html";
+    } else {
+        window.location.href="../student/student_dashboard.html";
+    }
+}
+
+/* AUTO LOAD */
+searchNotes();
+</script>
+
+</body>
+</html>

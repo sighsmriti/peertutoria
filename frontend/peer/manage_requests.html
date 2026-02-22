@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Requests - PeerTutoria</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary: #2196F3;
+            --secondary: #FF4081;
+            --bg: #f1f6ff;
+            --white: #ffffff;
+            --radius: 14px;
+            --shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            margin: 0;
+            font-family: Poppins, sans-serif;
+            background: var(--bg);
+        }
+
+        /* NAVBAR */
+        .navbar {
+            background: var(--white);
+            padding: 18px 40px;
+            box-shadow: var(--shadow);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .navbar h2 {
+            margin: 0;
+            color: var(--primary);
+        }
+
+        .navbar a {
+            margin-left: 18px;
+            text-decoration: none;
+            color: #333;
+        }
+
+        /* PAGE */
+        .container {
+            padding: 30px 50px;
+            max-width: 1000px;
+            margin: auto;
+        }
+
+        .page-title {
+            font-size: 26px;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+
+        /* REQUEST CARD */
+        .request-card {
+            background: var(--white);
+            padding: 20px;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            margin-bottom: 20px;
+        }
+
+        .request-card h3 {
+            margin: 0 0 8px 0;
+        }
+
+        .request-card p {
+            margin: 6px 0;
+            color: #555;
+        }
+
+        .actions {
+            margin-top: 15px;
+            display: flex;
+            gap: 12px;
+        }
+
+        .accept-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 16px;
+            border-radius: var(--radius);
+            cursor: pointer;
+        }
+
+        .reject-btn {
+            background: #eee;
+            border: none;
+            padding: 10px 16px;
+            border-radius: var(--radius);
+            cursor: pointer;
+        }
+
+        /* EMPTY STATE */
+        .empty {
+            background: var(--white);
+            padding: 30px;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            text-align: center;
+            color: #666;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- NAVBAR -->
+    <div class="navbar">
+        <h2>PeerTutoria</h2>
+        <div>
+            <a href="peer_dashboard.html">Home</a>
+            <a href="../shared/notifications.html">Notifications</a>
+            <a href="../shared/profile.html">Profile</a>
+            <a href="../shared/settings.html">Settings</a>
+        </div>
+    </div>
+
+    <div class="container">
+
+        <div class="page-title">Session Requests</div>
+
+        <!-- REQUEST LIST -->
+        <div id="requestsContainer"></div>
+
+    </div>
+
+    <!-- ✅ CONFIG (added) -->
+    <script src="../config.js"></script>
+
+    <script>
+        const user = JSON.parse(localStorage.getItem("currentUser"));
+
+        if (!user || user.role !== "peer") {
+            alert("Tutor access only");
+            window.location.href = "../index.html";
+        }
+
+        const container = document.getElementById("requestsContainer");
+
+        // FETCH REQUESTS
+        fetch(`${BASE_URL}/api/tutor/${user.id}/sessions`)
+            .then(res => res.json())
+            .then(data => {
+                if (!data || data.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty">
+                            <h3>No pending requests</h3>
+                            <p>You're all caught up 🎉</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                data.forEach(req => {
+                    const card = document.createElement("div");
+                    card.className = "request-card";
+
+                    card.innerHTML = `
+                        <h3>${req.topic}</h3>
+                        <p><strong>Student:</strong> ${req.student_name}</p>
+                        <p><strong>Requested at:</strong> ${new Date(req.created_at).toLocaleString()}</p>
+
+                        <div class="actions">
+                            <button class="accept-btn" onclick="acceptSession(${req.id})">
+                                Accept
+                            </button>
+                            <button class="reject-btn" onclick="rejectSession(${req.id})">
+                                Reject
+                            </button>
+                        </div>
+                    `;
+
+                    container.appendChild(card);
+                });
+            });
+
+        // ACCEPT SESSION
+        function acceptSession(sessionId) {
+            console.log("Accepting session:", sessionId);
+            fetch(`${BASE_URL}/api/sessions/${sessionId}/accept`, {
+                method: "PUT"
+            })
+                .then(res => {
+                    if (!res.ok) throw new Error("Accept failed");
+                    return res.json();
+                })
+                .then(() => {
+                    console.log("Session accepted successfully. Redirecting to chat...");
+                    localStorage.setItem("currentSessionId", sessionId);
+                    window.location.href = "../shared/chat_room.html";
+                })
+                .catch(err => {
+                    console.error("Error accepting session:", err);
+                    alert("Failed to accept session");
+                });
+        }
+
+        // REJECT SESSION
+        function rejectSession(sessionId) {
+            if (!confirm("Are you sure you want to reject this session?")) return;
+
+            fetch(`${BASE_URL}/api/sessions/${sessionId}/reject`, {
+                method: "PUT"
+            })
+                .then(res => {
+                    if (!res.ok) throw new Error("Reject failed");
+                    return res.json();
+                })
+                .then(() => {
+                    window.location.reload();
+                })
+                .catch(err => {
+                    console.error("Error rejecting session:", err);
+                    alert("Failed to reject session");
+                });
+        }
+    </script>
+
+</body>
+
+</html>

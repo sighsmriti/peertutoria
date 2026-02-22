@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Purchase History - PeerTutoria</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<style>
+:root {
+    --primary:#2196F3;
+    --secondary:#FF4081;
+    --bg:#f1f6ff;
+    --white:#fff;
+    --radius:14px;
+    --shadow:0 8px 20px rgba(0,0,0,0.1);
+}
+
+body {
+    margin:0;
+    font-family:Poppins, sans-serif;
+    background:var(--bg);
+}
+
+/* NAVBAR */
+.navbar {
+    background:var(--white);
+    padding:18px 40px;
+    box-shadow:var(--shadow);
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+}
+.navbar h2 { margin:0; color:var(--primary); }
+.navbar a { margin-left:18px; text-decoration:none; color:#333; }
+
+/* CONTENT */
+.container { padding:30px 50px; }
+
+.section-title {
+    font-size:22px;
+    font-weight:600;
+    margin-bottom:15px;
+}
+
+/* PURCHASE CARD */
+.purchase-card {
+    background:var(--white);
+    padding:20px;
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+    margin-bottom:20px;
+}
+
+.purchase-card h3 {
+    margin:0 0 6px 0;
+}
+
+.purchase-card p {
+    margin:5px 0;
+}
+
+button {
+    padding:10px 18px;
+    border:none;
+    border-radius:var(--radius);
+    background:var(--primary);
+    color:white;
+    cursor:pointer;
+    margin-top:10px;
+}
+</style>
+</head>
+<body>
+
+<div class="navbar">
+    <h2>PeerTutoria</h2>
+    <div>
+        <a href="student_dashboard.html">Home</a>
+        <a href="../shared/notifications.html">Notifications</a>
+        <a href="../shared/profile.html"
+           onclick="localStorage.removeItem('viewProfileUserEmail')">
+           Profile
+        </a>
+        <a href="../shared/settings.html">Settings</a>
+    </div>
+</div>
+
+<!-- 🔥 THIS WAS MISSING -->
+<div class="container"></div>
+
+<script src="../config.js"></script>
+
+<script>
+const user = JSON.parse(localStorage.getItem("currentUser"));
+if (!user) window.location.href = "../index.html";
+
+const container = document.querySelector(".container");
+
+/* ---------- LOAD PURCHASES ---------- */
+async function loadPurchases() {
+    const res = await fetch(`${BASE_URL}/api/notes/purchases/${user.id}`);
+    const purchases = await res.json();
+
+    container.innerHTML = `<div class="section-title">Purchase History</div>`;
+
+    if (!purchases.length) {
+        container.innerHTML += "<p>No purchases yet</p>";
+        return;
+    }
+
+    purchases.forEach(p => {
+        const date = new Date(p.purchased_at).toLocaleDateString();
+
+        container.innerHTML += `
+            <div class="purchase-card">
+                <h3>${p.title}</h3>
+                <p><strong>Tutor:</strong> ${p.tutor_name}</p>
+                <p><strong>Amount:</strong> ₹${p.amount_paid}</p>
+                <p><strong>Purchased on:</strong> ${date}</p>
+                <button onclick="openNote(${p.note_id})">Open</button>
+            </div>
+        `;
+    });
+}
+
+/* ---------- OPEN NOTE ---------- */
+function openNote(noteId) {
+    window.location.href = `note_viewer.html?noteId=${noteId}`;
+}
+
+loadPurchases();
+</script>
+
+</body>
+</html>

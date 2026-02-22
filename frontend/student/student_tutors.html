@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Tutors - PeerTutoria</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<style>
+:root {
+    --primary:#2196F3;
+    --secondary:#FF4081;
+    --bg:#f1f6ff;
+    --white:#fff;
+    --radius:14px;
+    --shadow:0 8px 20px rgba(0,0,0,0.1);
+}
+
+body {
+    margin:0;
+    font-family:Poppins, sans-serif;
+    background:var(--bg);
+}
+
+/* NAVBAR */
+.navbar {
+    background:var(--white);
+    padding:18px 40px;
+    box-shadow:var(--shadow);
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+}
+.navbar h2 { margin:0; color:var(--primary); }
+.navbar a { margin-left:18px; text-decoration:none; color:#333; }
+
+/* CONTENT */
+.container { padding:30px 50px; }
+
+.section-title { 
+    font-size:22px; 
+    font-weight:600; 
+    margin-bottom:15px; 
+}
+
+/* TUTOR CARD */
+.tutor-card {
+    background:var(--white);
+    padding:20px;
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+    margin-bottom:20px;
+}
+
+.tutor-card h3 { margin:0 0 6px 0; }
+
+button {
+    padding:10px 18px;
+    border:none;
+    border-radius:var(--radius);
+    cursor:pointer;
+    margin-right:10px;
+    margin-top:10px;
+}
+
+.view-btn { background:var(--primary); color:white; }
+.book-btn { background:var(--secondary); color:white; }
+
+</style>
+</head>
+
+<body>
+
+<div class="navbar">
+    <h2>PeerTutoria</h2>
+    <div>
+        <a href="student_dashboard.html">Home</a>
+        <a href="../shared/notifications.html">Notifications</a>
+        <a href="../shared/profile.html">Profile</a>
+        <a href="../shared/settings.html">Settings</a>
+    </div>
+</div>
+
+<div class="container">
+
+    <div class="section-title">My Tutors</div>
+
+    <div class="tutor-card">
+        <h3>Priya Sharma</h3>
+        <p>Maths • Physics</p>
+        <p>⭐ 4.9</p>
+        <button class="view-btn">View Profile</button>
+        <button class="book-btn">Book Again</button>
+    </div>
+
+    <div class="tutor-card">
+        <h3>Arjun Kumar</h3>
+        <p>Python • C Programming</p>
+        <p>⭐ 4.8</p>
+        <button class="view-btn">View Profile</button>
+        <button class="book-btn">Book Again</button>
+    </div>
+
+    <div class="tutor-card">
+        <h3>Sneha Kapoor</h3>
+        <p>English • Soft Skills</p>
+        <p>⭐ 4.7</p>
+        <button class="view-btn">View Profile</button>
+        <button class="book-btn">Book Again</button>
+    </div>
+
+</div>
+
+</body>
+</html>

@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rewards & Badges - PeerTutoria</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<style>
+:root {
+    --primary:#2196F3;
+    --secondary:#FF4081;
+    --bg:#f1f6ff;
+    --white:#fff;
+    --radius:14px;
+    --shadow:0 8px 20px rgba(0,0,0,0.1);
+}
+
+body {
+    margin:0;
+    font-family:Poppins, sans-serif;
+    background:var(--bg);
+}
+
+/* NAVBAR */
+.navbar {
+    background:var(--white);
+    padding:18px 40px;
+    box-shadow:var(--shadow);
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+}
+.navbar h2 { margin:0; color:var(--primary); }
+.navbar a { margin-left:18px; text-decoration:none; color:#333; }
+
+/* CONTENT */
+.container { padding:30px 50px; }
+
+.section-title {
+    font-size:22px;
+    font-weight:600;
+    margin-bottom:15px;
+}
+
+/* XP BOX */
+.xp-box {
+    background:var(--white);
+    padding:20px;
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+    margin-bottom:30px;
+}
+
+.xp-bar {
+    height:12px;
+    background:#dbe7ff;
+    border-radius:10px;
+    overflow:hidden;
+    margin-top:10px;
+}
+
+.xp-fill {
+    height:100%;
+    background:var(--secondary);
+    width:0%;
+}
+
+/* BADGES GRID */
+.badge-grid {
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(180px, 1fr));
+    gap:20px;
+}
+
+.badge-card {
+    background:var(--white);
+    padding:20px;
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+    text-align:center;
+}
+
+.badge-icon {
+    font-size:35px;
+    margin-bottom:10px;
+}
+
+.locked {
+    opacity:0.4;
+}
+</style>
+</head>
+
+<body>
+
+<div class="navbar">
+    <h2>PeerTutoria</h2>
+    <div>
+        <a href="student_dashboard.html">Home</a>
+        <a href="../shared/notifications.html">Notifications</a>
+        <a href="../shared/profile.html">Profile</a>
+        <a href="../shared/settings.html">Settings</a>
+    </div>
+</div>
+
+<div class="container">
+
+    <div class="section-title">Your Rewards</div>
+
+    <!-- XP PROGRESS -->
+    <div class="xp-box">
+        <h3 id="xpText">Level 1 – 0 XP</h3>
+        <div class="xp-bar">
+            <div class="xp-fill" id="xpFill"></div>
+        </div>
+    </div>
+
+    <!-- BADGES -->
+    <div class="section-title">Your Badges</div>
+    <div class="badge-grid" id="badgeGrid"></div>
+
+</div>
+
+<!-- ✅ CONFIG -->
+<script src="../config.js"></script>
+
+<script>
+const user = JSON.parse(localStorage.getItem("currentUser"));
+
+if (!user) {
+    alert("Please login first");
+    window.location.href = "../index.html";
+}
+
+// Fetch user + badges
+Promise.all([
+    fetch(`${BASE_URL}/api/user/${user.email}`).then(r => r.json()),
+    fetch(`${BASE_URL}/api/user/${user.email}/badges`).then(r => r.json()),
+    fetch(`${BASE_URL}/api/badges`).then(r => r.json())
+])
+.then(([userData, userBadges, allBadges]) => {
+
+    // XP + BAR
+    const xp = userData.xp || 0;
+    const level = userData.level || 1;
+
+    document.querySelector(".xp-box h3").innerText =
+        `Level ${level} – ${xp} XP`;
+
+    const percent = (xp % 100);
+    document.querySelector(".xp-fill").style.width = percent + "%";
+
+    // BADGES
+    const grid = document.querySelector(".badge-grid");
+    grid.innerHTML = "";
+
+    allBadges.forEach(badge => {
+        const earned = userBadges.some(ub => ub.id === badge.id);
+
+        const card = document.createElement("div");
+        card.className = "badge-card" + (earned ? "" : " locked");
+
+        card.innerHTML = `
+            <div class="badge-icon">🏅</div>
+            <h4>${badge.name}</h4>
+            <p>${badge.description}</p>
+        `;
+
+        grid.appendChild(card);
+    });
+});
+</script>
+
+</body>
+</html>
