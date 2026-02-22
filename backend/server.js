@@ -1,6 +1,6 @@
 const express = require("express");
 const cors = require("cors");
-const mysql = require("mysql2");
+const db = require("./config/db");
 const bcrypt = require("bcrypt");
 
 const app = express();
@@ -11,14 +11,7 @@ app.use("/match", require("./routes/match"));
 app.use("/uploads", express.static("uploads"));
 
 /* ---------------- DB CONNECTION ---------------- */
-const db = mysql.createConnection({
-    host: process.env.DB_HOST,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME,
-    port: process.env.DB_PORT,
-    ssl: { rejectUnauthorized: false }   // required for cloud DB
-});
+
 // const db = mysql.createConnection({
 //     host: "localhost",
 //     user: "root",
@@ -38,7 +31,7 @@ app.get("/test-db", async (req, res) => {
         const [rows] = await db.query("SELECT 1 AS ok");
         res.json(rows);
     } catch (err) {
-        console.error(err);
+        console.error("DB TEST ERROR:", err);
         res.status(500).json({ error: err.message });
     }
 });
