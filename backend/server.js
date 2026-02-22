@@ -33,6 +33,15 @@ db.connect(err => {
         console.log("📌 Connected to MySQL");
     }
 });
+app.get("/test-db", async (req, res) => {
+    try {
+        const [rows] = await db.query("SELECT 1 AS ok");
+        res.json(rows);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: err.message });
+    }
+});
 /* ---------------- NOTIFICATIONS HELPER ---------------- */
 function createNotification(email, message) {
     if (!email) return;
