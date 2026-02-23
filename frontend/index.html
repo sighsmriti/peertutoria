@@ -326,39 +326,47 @@
 
             /* ================= LOGIN ================= */
             if (isLogin) {
-                // FIX: Ensure only necessary fields for login are sent (email, password, role)
-                const loginData = {
-                    email: user.email,
-                    password: user.password,
-                    role: user.role
-                };
+    const loginData = {
+        email: user.email,
+        password: user.password,
+        role: user.role
+    };
 
-                fetch(`${BASE_URL}/api/login`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(loginData) // Sending fixed login data
-                })
-                    .then(res => res.json())
-                    .then(data => {
-                        if (data.error) {
-                            alert(`Login failed: ${data.error}`);
-                            return;
-                        }
+    console.log("LOGIN DATA:", loginData);
+    console.log("LOGIN URL:", `${BASE_URL}/api/login`);
 
-                        localStorage.setItem("currentUser", JSON.stringify(data.user));
+    fetch(`${BASE_URL}/api/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(loginData)
+    })
+    .then(res => {
+        console.log("RAW RESPONSE:", res);
+        return res.json();
+    })
+    .then(data => {
+        console.log("LOGIN RESPONSE:", data);
 
-                        if (data.user.role === "student") {
-                            window.location.href = "student/student_dashboard.html";
-                        } else {
-                            window.location.href = "peer/peer_dashboard.html";
-                        }
-                    })
-                    .catch((err) => {
-                        console.error("Login Fetch Error:", err);
-                        alert("Login failed. Check server connection (port 5000) and credentials.");
-                    });
-                return;
-            }
+        if (data.error) {
+            alert(`Login failed: ${data.error}`);
+            return;
+        }
+
+        localStorage.setItem("currentUser", JSON.stringify(data.user));
+
+        if (data.user.role === "student") {
+            window.location.href = "student/student_dashboard.html";
+        } else {
+            window.location.href = "peer/peer_dashboard.html";
+        }
+    })
+    .catch((err) => {
+        console.error("LOGIN FETCH ERROR:", err);
+        alert("Login failed — see console.");
+    });
+
+    return;
+}
 
 
             /* ================= REGISTER ================= */
