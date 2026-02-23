@@ -1,2 +1,2 @@
 // frontend/config.js
-const BASE_URL = "http://192.168.1.36:5000";
+const BASE_URL = "https://peertutoria-2.onrender.com";
