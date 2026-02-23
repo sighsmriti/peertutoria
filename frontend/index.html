@@ -302,7 +302,8 @@
         }
 
         document.getElementById("auth-form").addEventListener("submit", function (e) {
-            e.preventDefault();
+    e.preventDefault();
+    console.log("FORM SUBMITTED");   // 👈 ADD THIS LINE
 
             const user = {
                 name: document.getElementById("name").value,
