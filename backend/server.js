@@ -1,31 +1,25 @@
 const express = require("express");
-const cors = require("cors");
+
 const db = require("./config/db");
 const bcrypt = require("bcrypt");
 
 const app = express();
 // Middleware setup
-app.use(cors());
+
+const cors = require("cors");
+
+app.use(cors({
+  origin: true,   // 👈 automatically reflect request origin
+  credentials: true
+}));
+
+
 app.use(express.json());
 app.use("/match", require("./routes/match"));
 app.use("/uploads", express.static("uploads"));
 
 /* ---------------- DB CONNECTION ---------------- */
 
-// const db = mysql.createConnection({
-//     host: "localhost",
-//     user: "root",
-//     password: "-", // your MySQL password
-//     database: "peertutoria"
-// });
-
-db.connect(err => {
-    if (err) {
-        console.log("❌ DB Connection Error:", err);
-    } else {
-        console.log("📌 Connected to MySQL");
-    }
-});
 app.get("/test-db", async (req, res) => {
     try {
         const [rows] = await db.query("SELECT 1 AS ok");
@@ -616,7 +610,14 @@ const { Server } = require("socket.io");
 
 const server = http.createServer(app);
 const io = new Server(server, {
-    cors: { origin: "*" }
+    cors: {
+        origin: [
+            "http://localhost:3000",
+            "http://localhost:5173"
+        ],
+        methods: ["GET", "POST"],
+        credentials: true
+    }
 });
 
 /* 🔥 TRACK USERS PER SESSION */
@@ -862,6 +863,20 @@ app.delete("/api/notifications/:id", (req, res) => {
         }
     );
 });
-server.listen(5000, "0.0.0.0", () => {
-    console.log("🚀 Server running on all interfaces at port 5000");
+const PORT = process.env.PORT || 5000;
+// --- Global error handler (prevents fake CORS errors) ---
+app.use((err, req, res, next) => {
+    console.error("GLOBAL ERROR:", err);
+
+    res.header("Access-Control-Allow-Origin", "http://localhost:3000");
+    res.header("Access-Control-Allow-Credentials", "true");
+
+    res.status(500).json({
+        error: "Internal Server Error",
+        details: err.message
+    });
 });
+server.listen(PORT, "0.0.0.0", () => {
+    console.log(`🚀 Server running on port ${PORT}`);
+});
+
