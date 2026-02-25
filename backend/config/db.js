@@ -9,17 +9,16 @@ try {
   const caPath = path.join(__dirname, "ca.pem");
 
   if (fs.existsSync(caPath)) {
-    // Local environment (uses CA certificate)
+    // Local environment (secure with CA)
     sslConfig = { ca: fs.readFileSync(caPath) };
-    console.log("SSL: Using CA certificate (local mode)");
+    console.log("SSL: Using CA certificate (local)");
   } else {
-    // Render / cloud environment (no ca.pem present)
-    sslConfig = { rejectUnauthorized: true };
-    console.log("SSL: Using secure connection without CA (Render mode)");
+    // Render / Cloud (allow Aiven SSL)
+    sslConfig = { rejectUnauthorized: false };
+    console.log("SSL: Using Aiven SSL (Render)");
   }
 } catch (err) {
-  console.log("SSL fallback activated");
-  sslConfig = { rejectUnauthorized: true };
+  sslConfig = { rejectUnauthorized: false };
 }
 
 const db = mysql.createPool({
