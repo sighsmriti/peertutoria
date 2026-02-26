@@ -137,12 +137,10 @@ if (!user) {
 // Fetch user + badges
 Promise.all([
     fetch(`${BASE_URL}/api/user/${user.email}`).then(r => r.json()),
-    fetch(`${BASE_URL}/api/user/${user.email}/badges`).then(r => r.json()),
-    fetch(`${BASE_URL}/api/badges`).then(r => r.json())
+    fetch(`${BASE_URL}/api/badges/user/${user.id}`).then(r => r.json())
 ])
-.then(([userData, userBadges, allBadges]) => {
+.then(([userData, userBadges]) => {
 
-    // XP + BAR
     const xp = userData.xp || 0;
     const level = userData.level || 1;
 
@@ -152,20 +150,16 @@ Promise.all([
     const percent = (xp % 100);
     document.querySelector(".xp-fill").style.width = percent + "%";
 
-    // BADGES
     const grid = document.querySelector(".badge-grid");
     grid.innerHTML = "";
 
-    allBadges.forEach(badge => {
-        const earned = userBadges.some(ub => ub.id === badge.id);
-
+    userBadges.forEach(badge => {
         const card = document.createElement("div");
-        card.className = "badge-card" + (earned ? "" : " locked");
+        card.className = "badge-card";
 
         card.innerHTML = `
             <div class="badge-icon">🏅</div>
             <h4>${badge.name}</h4>
-            <p>${badge.description}</p>
         `;
 
         grid.appendChild(card);
