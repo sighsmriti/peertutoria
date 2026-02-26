@@ -8,7 +8,7 @@ exports.uploadNotes = (req, res) => {
     return res.status(400).json({ error: "No file uploaded" });
   }
 
-  const fileUrl = "/uploads/" + req.file.filename;
+  const fileUrl = req.file.path;   // Cloudinary URL
 
   db.query(
     `INSERT INTO notes 
