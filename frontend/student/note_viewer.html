@@ -57,8 +57,13 @@ async function loadNote(){
     }
 
     // 🔥 Correct Line (with toolbar hidden)
-    document.getElementById("pdfFrame").src =
-        BASE_URL + data.fileUrl + "#toolbar=0";
+    let fileUrl = data.fileUrl;
+
+if (!fileUrl.startsWith("http")) {
+    fileUrl = BASE_URL + fileUrl;   // old /uploads fallback
+}
+
+document.getElementById("pdfFrame").src = fileUrl + "#toolbar=0";
 }
 
 loadNote();
