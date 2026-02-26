@@ -20,15 +20,15 @@ app.use("/uploads", express.static("uploads"));
 
 /* ---------------- DB CONNECTION ---------------- */
 
-app.get("/test-db", async (req, res) => {
-    try {
-        const [rows] = await db.query("SELECT 1 AS ok");
-        res.json(rows);
-    } catch (err) {
-        console.error("DB TEST ERROR:", err);
-        res.status(500).json({ error: err.message });
-    }
-});
+// app.get("/test-db", async (req, res) => {
+//     try {
+//         const [rows] = await db.query("SELECT 1 AS ok");
+//         res.json(rows);
+//     } catch (err) {
+//         console.error("DB TEST ERROR:", err);
+//         res.status(500).json({ error: err.message });
+//     }
+// });
 /* ---------------- NOTIFICATIONS HELPER ---------------- */
 function createNotification(email, message) {
     if (!email) return;
@@ -589,13 +589,13 @@ db.query(
     );
 });
 app.get("/api/tutors", (req, res) => {
-    const { topic } = req.query;
+    const { topic = "" } = req.query;
 
     const sql = `
         SELECT id, name, email, skills, institute, is_online
         FROM users
         WHERE role = 'peer'
-          AND skills LIKE ?
+          AND LOWER(skills) LIKE LOWER(?)
         ORDER BY is_online DESC, xp DESC
     `;
 
@@ -604,7 +604,6 @@ app.get("/api/tutors", (req, res) => {
         res.json(rows);
     });
 });
-
 const http = require("http");
 const { Server } = require("socket.io");
 
