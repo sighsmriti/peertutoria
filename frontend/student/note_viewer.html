@@ -63,7 +63,8 @@ if (!fileUrl.startsWith("http")) {
     fileUrl = BASE_URL + fileUrl;   // old /uploads fallback
 }
 
-document.getElementById("pdfFrame").src = fileUrl + "#toolbar=0";
+document.getElementById("pdfFrame").src =
+    "https://docs.google.com/gview?embedded=true&url=" + encodeURIComponent(fileUrl)+ "&nocache=1";
 }
 
 loadNote();
