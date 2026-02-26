@@ -1,1 +1,1 @@
-const BASE_URL = "https://peertutoria-2.onrender.com";
+const BASE_URL = "https://peertutoria.onrender.com";
