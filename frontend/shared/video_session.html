@@ -94,8 +94,8 @@ video {
 </div>
 
 <div class="controls">
-    <button class="mute-btn" onclick="toggleMute()">🎤 Mute</button>
-    <button class="cam-btn" onclick="toggleCamera()">🎥 Camera</button>
+    <button id="muteBtn" class="mute-btn" onclick="toggleMute()">🎤 Mute</button>
+    <button id="camBtn" class="cam-btn" onclick="toggleCamera()">🎥 Camera Off</button>
     <button class="leave-btn" onclick="endSession()">End Session</button>
 </div>
 
@@ -120,7 +120,21 @@ let started = false;
 let pendingCandidates = [];
 
 const pcConfig = {
-    iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
+    iceServers: [
+        {
+            urls: "stun:stun.relay.metered.ca:80"
+        },
+        {
+            urls: [
+                "turn:global.relay.metered.ca:80",
+                "turn:global.relay.metered.ca:80?transport=tcp",
+                "turn:global.relay.metered.ca:443",
+                "turns:global.relay.metered.ca:443?transport=tcp"
+            ],
+            username: "0c8d2d4e7cbb18f3d18e47b3",
+            credential: "O2z0s6dFmh5hxHVq"
+        }
+    ]
 };
 
 /* ================= PEER CONNECTION ================= */
@@ -206,14 +220,32 @@ socket.on("iceCandidate", async ({ candidate }) => {
 /* ================= CONTROLS ================= */
 function toggleMute() {
     if (!localStream) return;
-    localStream.getAudioTracks()[0].enabled =
-        !localStream.getAudioTracks()[0].enabled;
+
+    const audioTrack = localStream.getAudioTracks()[0];
+    audioTrack.enabled = !audioTrack.enabled;
+
+    const btn = document.getElementById("muteBtn");
+
+    if (audioTrack.enabled) {
+        btn.innerText = "🎤 Mute";
+    } else {
+        btn.innerText = "🔇 Unmute";
+    }
 }
 
 function toggleCamera() {
     if (!localStream) return;
-    localStream.getVideoTracks()[0].enabled =
-        !localStream.getVideoTracks()[0].enabled;
+
+    const videoTrack = localStream.getVideoTracks()[0];
+    videoTrack.enabled = !videoTrack.enabled;
+
+    const btn = document.getElementById("camBtn");
+
+    if (videoTrack.enabled) {
+        btn.innerText = "🎥 Camera Off";
+    } else {
+        btn.innerText = "📷 Camera On";
+    }
 }
 
 /* ================= END SESSION ================= */
@@ -237,7 +269,10 @@ socket.on("sessionEnded", () => {
     }
 });
 /* ================= START ================= */
-startVideo();
+socket.on("readyForCall", () => {
+    console.log("Both users ready. Starting video...");
+    startVideo();
+});
 </script>
 
 </body>
