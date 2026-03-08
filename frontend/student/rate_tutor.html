@@ -24,7 +24,7 @@ body {
     box-shadow: 0 8px 20px rgba(0,0,0,0.1);
 }
 
-select, textarea {
+textarea {
     width: 100%;
     margin-top: 12px;
     padding: 8px;
@@ -39,6 +39,21 @@ button {
     border-radius: 8px;
     cursor: pointer;
 }
+
+button:hover {
+    background: #1976D2;
+}
+
+.stars {
+    font-size: 30px;
+    margin-top: 15px;
+    cursor: pointer;
+}
+
+.stars span {
+    color: #ccc;
+    transition: 0.2s;
+}
 </style>
 </head>
 
@@ -46,22 +61,26 @@ button {
 
 <div class="card">
     <h2>Rate Your Tutor</h2>
+    <div id="sessionDuration" style="margin-bottom:12px;color:#555;font-weight:500;">
+Session Duration: loading...
+</div>
+    <!-- ⭐ STAR RATING -->
+    <div id="starContainer" class="stars">
+        <span data-value="1">☆</span>
+        <span data-value="2">☆</span>
+        <span data-value="3">☆</span>
+        <span data-value="4">☆</span>
+        <span data-value="5">☆</span>
+    </div>
 
-    <select id="rating">
-        <option value="">Select rating</option>
-        <option value="5">⭐⭐⭐⭐⭐</option>
-        <option value="4">⭐⭐⭐⭐</option>
-        <option value="3">⭐⭐⭐</option>
-        <option value="2">⭐⭐</option>
-        <option value="1">⭐</option>
-    </select>
+    <input type="hidden" id="rating" />
 
     <textarea id="review" placeholder="Optional review"></textarea>
 
     <button onclick="submitRating()">Submit</button>
 </div>
 
-<!-- ✅ CONFIG (added) -->
+<!-- CONFIG -->
 <script src="../config.js"></script>
 
 <script>
@@ -80,16 +99,66 @@ let tutorId = null;
 fetch(`${BASE_URL}/api/sessions/${sessionId}`)
     .then(res => res.json())
     .then(session => {
+
         tutorId = session.tutor_id;
+
+        /* -------- SESSION DURATION -------- */
+
+        if(session.started_at && session.completed_at){
+
+            const start = new Date(session.started_at);
+            const end = new Date(session.completed_at);
+
+            const minutes = Math.floor((end - start) / 60000);
+
+            document.getElementById("sessionDuration").innerText =
+                `Session Duration: ${minutes} minutes`;
+
+        }
+
     })
     .catch(() => {
         alert("Failed to load session");
         window.location.href = "student_dashboard.html";
     });
 
+/* ---------- STAR LOGIC ---------- */
+const stars = document.querySelectorAll("#starContainer span");
+const ratingInput = document.getElementById("rating");
+
+// Click to select
+stars.forEach(star => {
+    star.addEventListener("click", () => {
+        const value = star.getAttribute("data-value");
+        ratingInput.value = value;
+
+        stars.forEach(s => {
+            s.textContent = s.getAttribute("data-value") <= value ? "★" : "☆";
+        });
+    });
+
+    // Hover preview
+    star.addEventListener("mouseover", () => {
+        const value = star.getAttribute("data-value");
+
+        stars.forEach(s => {
+            s.textContent = s.getAttribute("data-value") <= value ? "★" : "☆";
+        });
+    });
+
+    // Restore after hover
+    star.addEventListener("mouseout", () => {
+        const currentRating = ratingInput.value;
+
+        stars.forEach(s => {
+            s.textContent = s.getAttribute("data-value") <= currentRating ? "★" : "☆";
+        });
+    });
+});
+
 /* ---------- SUBMIT RATING ---------- */
 function submitRating() {
-    const rating = document.getElementById("rating").value;
+    const rating = ratingInput.value;
     const review = document.getElementById("review").value;
 
     if (!rating) {
@@ -115,7 +184,10 @@ function submitRating() {
     })
     .then(res => res.json())
     .then(() => {
+        // Clean up storage
         localStorage.removeItem("lastCompletedSession");
+        localStorage.removeItem("lastSessionDuration");
+
         alert("Thanks for your feedback!");
         window.location.href = "student_dashboard.html";
     })

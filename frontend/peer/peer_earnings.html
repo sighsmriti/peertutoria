@@ -27,7 +27,7 @@ th{background:#2196F3;color:white;}
 </div>
 
 <div class="card">
-<h3>Monthly Earnings</h3>
+<h3>Weekly Earnings</h3>
 <canvas id="earningsChart"></canvas>
 </div>
 
@@ -97,21 +97,22 @@ async function loadGraph(){
     const res = await fetch(`${BASE_URL}/api/peer/earnings/monthly/${user.id}`);
     const data = await res.json();
 
-    const labels = data.map(d=>d.month);
+    const labels = data.map(d=>"Week " + d.week);
     const values = data.map(d=>d.total_earning);
 
     new Chart(document.getElementById("earningsChart"),{
-        type:"line",
-        data:{
-            labels:labels,
-            datasets:[{
-                label:"Monthly Earnings",
-                data:values,
-                fill:false,
-                tension:0.3
-            }]
-        }
-    });
+    type:"line",
+    data:{
+        labels:labels,
+        datasets:[{
+            label:"Weekly Earnings",
+            data:values,
+            fill:false,
+            tension:0.3,
+            borderWidth:3
+        }]
+    }
+});
 }
 
 loadEarnings();

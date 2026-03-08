@@ -82,6 +82,7 @@ video {
 
 <div class="header">
     <h3>Video Session</h3>
+    <div id="sessionTimer">00:00</div>
 </div>
 
 <div class="video-container">
@@ -112,7 +113,17 @@ if (!user || !sessionId) {
 /* ================= SOCKET ================= */
 const socket = io(BASE_URL);
 socket.emit("joinSession", sessionId);
+/* ================= LOAD SESSION TIMER ================= */
 
+fetch(`${BASE_URL}/api/sessions/${sessionId}`)
+.then(res => res.json())
+.then(session => {
+
+    if(!session.started_at) return;
+
+    startTimer(session.started_at);
+
+});
 /* ================= WEBRTC STATE ================= */
 let localStream;
 let peerConnection;
@@ -265,9 +276,28 @@ socket.on("sessionEnded", () => {
         // Go to rating page instead of dashboard
         window.location.href = "../student/rate_tutor.html";
     } else {
-        window.location.href = "../peer/peer_dashboard.html";
+        window.location.href = "../peer/session_summary.html";
     }
 });
+/* ================= SESSION TIMER ================= */
+
+function startTimer(startTime){
+
+    const start = new Date(startTime).getTime();
+
+    setInterval(() => {
+
+        const diff = Date.now() - start;
+
+        const minutes = Math.floor(diff / 60000);
+        const seconds = Math.floor((diff % 60000) / 1000);
+
+        document.getElementById("sessionTimer").innerText =
+            `${minutes}:${seconds.toString().padStart(2,"0")}`;
+
+    },1000);
+
+}
 /* ================= START ================= */
 socket.on("readyForCall", () => {
     console.log("Both users ready. Starting video...");

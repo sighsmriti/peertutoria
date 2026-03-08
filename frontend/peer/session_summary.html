@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Session Summary</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<style>
+
+:root{
+    --primary:#2196F3;
+    --secondary:#FF4081;
+    --bg:#f4f6ff;
+    --white:#fff;
+    --radius:12px;
+    --shadow:0 6px 16px rgba(0,0,0,0.1);
+}
+
+body{
+    margin:0;
+    font-family:Poppins, sans-serif;
+    background:var(--bg);
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    height:100vh;
+}
+
+.card{
+    background:var(--white);
+    padding:35px;
+    width:380px;
+    text-align:center;
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+}
+
+.card h2{
+    margin-top:0;
+    color:var(--primary);
+}
+
+.duration{
+    margin-top:15px;
+    font-size:18px;
+    font-weight:500;
+    color:#444;
+}
+
+.topic{
+    margin-top:8px;
+    color:#777;
+}
+
+button{
+    margin-top:25px;
+    padding:10px 18px;
+    border:none;
+    border-radius:8px;
+    background:var(--primary);
+    color:white;
+    font-size:14px;
+    cursor:pointer;
+}
+
+button:hover{
+    background:#1976D2;
+}
+
+</style>
+
+<script src="../config.js"></script>
+
+</head>
+
+<body>
+
+<div class="card">
+
+    <h2>Session Completed 🎉</h2>
+
+    <div id="topic" class="topic"></div>
+
+    <div id="duration" class="duration">
+        Loading session info...
+    </div>
+
+    <button onclick="goDashboard()">Close</button>
+
+</div>
+
+
+<script>
+
+/* -------- SESSION DATA -------- */
+
+const user = JSON.parse(localStorage.getItem("currentUser"));
+const sessionId = localStorage.getItem("lastCompletedSession");
+
+if(!user || !sessionId){
+    window.location.href = "../peer/peer_dashboard.html";
+}
+
+/* -------- LOAD SESSION INFO -------- */
+
+fetch(`${BASE_URL}/api/sessions/${sessionId}`)
+.then(res => res.json())
+.then(session => {
+
+    if(session.topic){
+        document.getElementById("topic").innerText =
+            `Topic: ${session.topic}`;
+    }
+
+    if(session.started_at && session.completed_at){
+
+        const start = new Date(session.started_at);
+        const end = new Date(session.completed_at);
+
+        const diff = end - start;
+
+        const minutes = Math.floor(diff / 60000);
+        const seconds = Math.floor((diff % 60000) / 1000);
+
+        document.getElementById("duration").innerText =
+            `Duration: ${minutes}m ${seconds}s`;
+
+    } else {
+        document.getElementById("duration").innerText =
+            "Duration unavailable";
+    }
+
+});
+
+/* -------- CLOSE BUTTON -------- */
+
+function goDashboard(){
+
+    localStorage.removeItem("lastCompletedSession");
+
+    window.location.href = "../peer/peer_dashboard.html";
+
+}
+
+</script>
+
+</body>
+</html>

@@ -135,18 +135,18 @@ app.get("/api/peer/earnings/:peerId", (req, res) => {
 app.get("/api/peer/earnings/monthly/:peerId", (req, res) => {
 
     const sql = `
-        SELECT 
-            DATE_FORMAT(np.purchased_at, '%Y-%m') AS month,
-            SUM(np.amount_paid - pe.platform_cut) AS total_earning
-        FROM note_purchases np
-        JOIN notes n ON np.note_id = n.id
-        JOIN platform_earnings pe 
-            ON pe.reference_id = np.id 
-           AND pe.source = 'note_purchase'
-        WHERE n.uploaded_by = ?
-        GROUP BY month
-        ORDER BY month
-    `;
+    SELECT 
+        YEARWEEK(np.purchased_at, 1) AS week,
+        SUM(np.amount_paid - pe.platform_cut) AS total_earning
+    FROM note_purchases np
+    JOIN notes n ON np.note_id = n.id
+    JOIN platform_earnings pe 
+        ON pe.reference_id = np.id 
+       AND pe.source = 'note_purchase'
+    WHERE n.uploaded_by = ?
+    GROUP BY week
+    ORDER BY week
+`;
 
     db.query(sql, [req.params.peerId], (err, rows) => {
         if (err) return res.status(500).json({ error: "Graph failed" });
@@ -173,19 +173,20 @@ app.get("/api/peer/reviews-dashboard/:peerId", (req, res) => {
     `;
 
     /* MONTHLY GRAPH DATA */
-    const monthlyQuery = `
-        SELECT 
-            DATE_FORMAT(s.completed_at, '%Y-%m') AS month,
-            COUNT(DISTINCT s.id) AS sessions,
-            COUNT(DISTINCT r.id) AS reviews
-        FROM sessions s
-        LEFT JOIN ratings r 
-            ON r.session_id = s.id
-        WHERE s.tutor_id = ?
-          AND s.status = 'completed'
-        GROUP BY month
-        ORDER BY month
-    `;
+    /* WEEKLY GRAPH DATA */
+const weeklyQuery = `
+    SELECT 
+        YEARWEEK(s.completed_at, 1) AS week,
+        COUNT(DISTINCT s.id) AS sessions,
+        COUNT(DISTINCT r.id) AS reviews
+    FROM sessions s
+    LEFT JOIN ratings r 
+        ON r.session_id = s.id
+    WHERE s.tutor_id = ?
+      AND s.status = 'completed'
+    GROUP BY week
+    ORDER BY week
+`;
 
     db.query(totalSessionsQuery, [peerId], (err, sessionsRes) => {
         if (err) return res.status(500).json({ error: "Sessions fetch failed" });
@@ -193,13 +194,13 @@ app.get("/api/peer/reviews-dashboard/:peerId", (req, res) => {
         db.query(totalReviewsQuery, [peerId], (err, reviewsRes) => {
             if (err) return res.status(500).json({ error: "Reviews fetch failed" });
 
-            db.query(monthlyQuery, [peerId], (err, monthlyRes) => {
+            db.query(monthlyQuery, [peerId], (err, weeklyRes) => {
                 if (err) return res.status(500).json({ error: "Graph data failed" });
 
                 res.json({
                     total_sessions: sessionsRes[0].total_sessions,
                     total_reviews: reviewsRes[0].total_reviews,
-                    monthly: monthlyRes
+                    weekly: weeklyRes
                 });
             });
         });
@@ -641,8 +642,18 @@ io.on("connection", socket => {
 
         // 🔥 BOTH USERS READY → START VIDEO SAFELY
         if (sessionUsers[sessionId] === 2) {
-            io.to(sessionId).emit("readyForCall");
+
+    // set session start time once
+    db.query(
+        "UPDATE sessions SET started_at = NOW() WHERE id=? AND started_at IS NULL",
+        [sessionId],
+        (err) => {
+            if (err) console.error("Failed to set session start time:", err);
         }
+    );
+
+    io.to(sessionId).emit("readyForCall");
+}
     });
 
     /* ---------- CHAT ---------- */
