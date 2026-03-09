@@ -194,7 +194,7 @@ const weeklyQuery = `
         db.query(totalReviewsQuery, [peerId], (err, reviewsRes) => {
             if (err) return res.status(500).json({ error: "Reviews fetch failed" });
 
-            db.query(monthlyQuery, [peerId], (err, weeklyRes) => {
+            db.query(weeklyQuery, [peerId], (err, weeklyRes) => {
                 if (err) return res.status(500).json({ error: "Graph data failed" });
 
                 res.json({

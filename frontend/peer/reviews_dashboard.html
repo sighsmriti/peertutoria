@@ -86,9 +86,9 @@ async function loadDashboard(){
     document.getElementById("reviews").innerText = data.total_reviews;
 
     /* GRAPH DATA */
-    const labels = data.monthly.map(m => "Week " + m.week);
-    const sessions = data.monthly.map(m => m.sessions);
-    const reviews = data.monthly.map(m => m.reviews);
+    const labels = data.weekly.map(m => "Week " + m.week);
+const sessions = data.weekly.map(m => m.sessions);
+const reviews = data.weekly.map(m => m.reviews);
 
     const ctx = document.getElementById("reviewChart").getContext("2d");
 
