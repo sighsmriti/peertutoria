@@ -87,11 +87,14 @@ video {
 
 <div class="video-container">
     <div class="video-box">
-        <video id="localVideo" autoplay muted playsinline></video>
-    </div>
-    <div class="video-box">
-        <video id="remoteVideo" autoplay playsinline></video>
-    </div>
+    <video id="localVideo" autoplay muted playsinline></video>
+</div>
+<div style="text-align:center;font-size:13px;">You</div>
+
+<div class="video-box">
+    <video id="remoteVideo" autoplay playsinline></video>
+</div>
+<div style="text-align:center;font-size:13px;">Peer</div>
 </div>
 
 <div class="controls">
@@ -132,9 +135,8 @@ let pendingCandidates = [];
 
 const pcConfig = {
     iceServers: [
-        {
-            urls: "stun:stun.relay.metered.ca:80"
-        },
+        { urls: "stun:stun.l.google.com:19302" }, // ⭐ important
+        { urls: "stun:stun.relay.metered.ca:80" },
         {
             urls: [
                 "turn:global.relay.metered.ca:80",
@@ -153,7 +155,9 @@ function createPeerConnection() {
     peerConnection = new RTCPeerConnection(pcConfig);
 
     peerConnection.ontrack = e => {
-        document.getElementById("remoteVideo").srcObject = e.streams[0];
+        const remoteVideo = document.getElementById("remoteVideo");
+        remoteVideo.srcObject = e.streams[0];
+        remoteVideo.play().catch(() => {});
     };
 
     peerConnection.onicecandidate = e => {
@@ -164,17 +168,40 @@ function createPeerConnection() {
             });
         }
     };
+
+    peerConnection.onconnectionstatechange = () => {
+        console.log("Connection state:", peerConnection.connectionState);
+        if (
+    peerConnection.connectionState === "failed" ||
+    peerConnection.connectionState === "disconnected"
+) {
+    console.log("Reconnecting...");
+    started = false;
+    startVideo();
+}
+    };
 }
 
 /* ================= START VIDEO ================= */
 async function startVideo() {
     if (started) return;
     started = true;
-
+    if (localStream) {
+        localStream.getTracks().forEach(track => track.stop());
+    }
+if (peerConnection) {
+    peerConnection.close();
+}
+    try {
     localStream = await navigator.mediaDevices.getUserMedia({
         video: true,
         audio: true
     });
+} catch (err) {
+    alert("Camera or microphone access denied.");
+    console.error(err);
+    return;
+}
 
     document.getElementById("localVideo").srcObject = localStream;
 
@@ -204,25 +231,43 @@ socket.on("videoOffer", async ({ offer }) => {
     socket.emit("videoAnswer", { sessionId, answer });
 
     // 🔥 Apply buffered ICE
-    pendingCandidates.forEach(c =>
-        peerConnection.addIceCandidate(c)
-    );
-    pendingCandidates = [];
+    for (const candidate of pendingCandidates) {
+    try {
+        await peerConnection.addIceCandidate(candidate);
+    } catch (err) {
+        console.error("Buffered ICE failed:", err);
+    }
+}
+pendingCandidates = [];
 });
 
 socket.on("videoAnswer", async ({ answer }) => {
     await peerConnection.setRemoteDescription(answer);
 
     // 🔥 Apply buffered ICE
-    pendingCandidates.forEach(c =>
-        peerConnection.addIceCandidate(c)
-    );
-    pendingCandidates = [];
+    for (const candidate of pendingCandidates) {
+    try {
+        await peerConnection.addIceCandidate(candidate);
+    } catch (err) {
+        console.error("Buffered ICE failed:", err);
+    }
+}
+pendingCandidates = [];
 });
 
 socket.on("iceCandidate", async ({ candidate }) => {
-    if (peerConnection && peerConnection.remoteDescription) {
-        await peerConnection.addIceCandidate(candidate);
+
+    if (!peerConnection) {
+        pendingCandidates.push(candidate);
+        return;
+    }
+
+    if (peerConnection.remoteDescription && peerConnection.remoteDescription.type) {
+        try {
+            await peerConnection.addIceCandidate(candidate);
+        } catch (err) {
+            console.error("ICE error:", err);
+        }
     } else {
         pendingCandidates.push(candidate);
     }
@@ -285,8 +330,7 @@ function startTimer(startTime){
 
     const start = new Date(startTime).getTime();
 
-    setInterval(() => {
-
+    function update(){
         const diff = Date.now() - start;
 
         const minutes = Math.floor(diff / 60000);
@@ -294,9 +338,10 @@ function startTimer(startTime){
 
         document.getElementById("sessionTimer").innerText =
             `${minutes}:${seconds.toString().padStart(2,"0")}`;
+    }
 
-    },1000);
-
+    update();
+    setInterval(update,1000);
 }
 /* ================= START ================= */
 socket.on("readyForCall", () => {

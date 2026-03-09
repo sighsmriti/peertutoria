@@ -388,7 +388,8 @@ app.put("/api/sessions/:id/accept", (req, res) => {
 
     const sql = `
         UPDATE sessions
-        SET status = 'accepted'
+        SET status = 'accepted',
+            started_at = NOW()
         WHERE id = ?
     `;
 

@@ -106,15 +106,20 @@ fetch(`${BASE_URL}/api/sessions/${sessionId}`)
 
         if(session.started_at && session.completed_at){
 
-            const start = new Date(session.started_at);
-            const end = new Date(session.completed_at);
+    const start = new Date(session.started_at);
+    const end = new Date(session.completed_at);
 
-            const minutes = Math.floor((end - start) / 60000);
+    const minutes = Math.floor((end - start) / 60000);
 
-            document.getElementById("sessionDuration").innerText =
-                `Session Duration: ${minutes} minutes`;
+    document.getElementById("sessionDuration").innerText =
+        `Session Duration: ${minutes} minutes`;
 
-        }
+} else {
+
+    document.getElementById("sessionDuration").innerText =
+        "Session duration unavailable";
+
+}
 
     })
     .catch(() => {
