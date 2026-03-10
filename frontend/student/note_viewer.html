@@ -42,11 +42,49 @@ body {
 <script>
 const params = new URLSearchParams(window.location.search);
 const noteId = params.get("noteId");
+const justPurchased = params.get("purchased");
 const user = JSON.parse(localStorage.getItem("currentUser"));
 
-if(!user) window.location.href="../index.html";
+/* ---------- BASIC VALIDATION ---------- */
+
+if(!user){
+    window.location.href="../index.html";
+}
+
+if(!noteId){
+    alert("Invalid note");
+    window.location.href="student_notes_market.html";
+}
+
+/* ---------- CHECK PURCHASE ACCESS ---------- */
+
+async function checkAccess(){
+
+    let res = await fetch(`${BASE_URL}/api/notes/check-purchase/${noteId}/${user.id}`);
+    let data = await res.json();
+
+    if(!data.purchased && justPurchased){
+
+        // wait a moment for DB insert after payment
+        await new Promise(r => setTimeout(r,800));
+
+        res = await fetch(`${BASE_URL}/api/notes/check-purchase/${noteId}/${user.id}`);
+        data = await res.json();
+    }
+
+    if(!data.purchased){
+        alert("Purchase required");
+        window.location.href="student_notes_market.html";
+        return false;
+    }
+
+    return true;
+}
+
+/* ---------- LOAD NOTE ---------- */
 
 async function loadNote(){
+
     const res = await fetch(`${BASE_URL}/api/notes/view/${noteId}/${user.id}`);
     const data = await res.json();
 
@@ -56,18 +94,30 @@ async function loadNote(){
         return;
     }
 
-    // 🔥 Correct Line (with toolbar hidden)
     let fileUrl = data.fileUrl;
 
-if (!fileUrl.startsWith("http")) {
-    fileUrl = BASE_URL + fileUrl;   // old /uploads fallback
+    if (!fileUrl.startsWith("http")) {
+        fileUrl = BASE_URL + fileUrl;
+    }
+
+    document.getElementById("pdfFrame").src =
+        "https://docs.google.com/gview?embedded=true&url=" + encodeURIComponent(fileUrl) + "&nocache=1";
 }
 
-document.getElementById("pdfFrame").src =
-    "https://docs.google.com/gview?embedded=true&url=" + encodeURIComponent(fileUrl)+ "&nocache=1";
+/* ---------- INITIALIZE ---------- */
+
+async function init(){
+
+    const allowed = await checkAccess();
+
+    if(allowed){
+        await loadNote();
+    }
+
 }
 
-loadNote();
+init();
+
 </script>
 
 </body>

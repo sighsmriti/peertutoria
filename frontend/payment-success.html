@@ -109,22 +109,18 @@ async function confirmPurchase(){
         })
     });
 
-    // redirect ONLY after purchase is recorded
-    window.location.href = `/student/note_viewer.html?noteId=${noteId}`;
+    // redirect AFTER purchase is saved
+    window.location.href = `/student/note_viewer.html?noteId=${noteId}&purchased=1`;
 }
 
-confirmPurchase();
-
-/* confirm purchase immediately */
-confirmPurchase();
-
-/* auto open note after 2 seconds */
+/* manual fallback button */
 
 function openNote(){
-window.location.href = `/student/note_viewer.html?noteId=${noteId}`;
+    window.location.href = `/student/note_viewer.html?noteId=${noteId}&purchased=1`;
 }
 
-setTimeout(openNote,2000);
+/* run once */
+confirmPurchase();
 
 </script>
 
