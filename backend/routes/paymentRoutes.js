@@ -49,7 +49,7 @@ router.post("/create-checkout-session", (req, res) => {
                         studentId
                     },
 
-                    success_url: `${process.env.FRONTEND_URL}/payment-success?noteId=${noteId}&studentId=${studentId}`,
+                    success_url: `${process.env.FRONTEND_URL}/payment-success.html?noteId=${noteId}&studentId=${studentId}`,
                     cancel_url: `${process.env.FRONTEND_URL}/payment-cancel`
                 });
 
