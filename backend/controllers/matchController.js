@@ -1,27 +1,31 @@
 const db = require("../config/db");
 const { rankTutors } = require("../utils/matcher");
 
-exports.matchTutor = async (req, res) => {
-    try {
-        const { subject } = req.body;
+exports.matchTutor = (req, res) => {
 
-        if (!subject) {
-            return res.status(400).json({ error: "Subject is required" });
+    const { subject } = req.body;
+
+    if (!subject) {
+        return res.status(400).json({ error: "Subject is required" });
+    }
+
+    db.query(`
+        SELECT 
+            id,
+            name,
+            skills,
+            rating,
+            rating_count,
+            xp,
+            is_online
+        FROM users
+        WHERE role = 'peer'
+    `, (err, rows) => {
+
+        if (err) {
+            console.error("Matcher DB error:", err);
+            return res.status(500).json({ error: "Failed to fetch tutors" });
         }
-
-        // Fetch all peers (tutors) from DB
-        const [rows] = await db.query(`
-            SELECT 
-                id,
-                name,
-                skills,
-                rating,
-                rating_count,
-                xp,
-                is_online
-            FROM users
-            WHERE role = 'peer'
-        `);
 
         if (!rows || rows.length === 0) {
             return res.json([]);
@@ -32,7 +36,6 @@ exports.matchTutor = async (req, res) => {
             id: user.id,
             name: user.name,
 
-            // Convert comma-separated skills → array
             skills: user.skills
                 ? user.skills
                     .split(",")
@@ -52,8 +55,5 @@ exports.matchTutor = async (req, res) => {
 
         res.json(rankedTutors);
 
-    } catch (err) {
-        console.error("Matcher error:", err);
-        res.status(500).json({ error: "Failed to match tutors" });
-    }
+    });
 };

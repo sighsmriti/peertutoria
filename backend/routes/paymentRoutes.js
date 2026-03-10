@@ -5,102 +5,121 @@ const db = require("../config/db");
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
-/* CREATE CHECKOUT SESSION */
-router.post("/create-checkout-session", async (req,res)=>{
+/* ---------- CREATE CHECKOUT SESSION ---------- */
+router.post("/create-checkout-session", (req, res) => {
 
-const {noteId, studentId} = req.body;
+    const { noteId, studentId } = req.body;
 
-try{
+    db.query(
+        "SELECT title, price FROM notes WHERE id=?",
+        [noteId],
+        async (err, rows) => {
 
-const [rows] = await db.query(
-"SELECT title, price FROM notes WHERE id=?",
-[noteId]
-);
+            if (err) {
+                console.error("DB error:", err);
+                return res.status(500).json({ error: "Database error" });
+            }
 
-if(!rows.length){
-return res.status(404).json({error:"Note not found"});
-}
+            if (!rows.length) {
+                return res.status(404).json({ error: "Note not found" });
+            }
 
-const note = rows[0];
+            const note = rows[0];
 
-const session = await stripe.checkout.sessions.create({
+            try {
 
-payment_method_types:["card"],
-mode:"payment",
+                const session = await stripe.checkout.sessions.create({
 
-line_items:[{
-price_data:{
-currency:"inr",
-product_data:{
-name: note.title
-},
-unit_amount: note.price * 100
-},
-quantity:1
-}],
+                    payment_method_types: ["card"],
+                    mode: "payment",
 
-metadata:{
-noteId,
-studentId
-},
+                    line_items: [{
+                        price_data: {
+                            currency: "inr",
+                            product_data: {
+                                name: note.title
+                            },
+                            unit_amount: note.price * 100
+                        },
+                        quantity: 1
+                    }],
 
-success_url:`${process.env.FRONTEND_URL}/payment-success?noteId=${noteId}&studentId=${studentId}`,
-cancel_url:`${process.env.FRONTEND_URL}/payment-cancel`
+                    metadata: {
+                        noteId,
+                        studentId
+                    },
 
+                    success_url: `${process.env.FRONTEND_URL}/payment-success?noteId=${noteId}&studentId=${studentId}`,
+                    cancel_url: `${process.env.FRONTEND_URL}/payment-cancel`
+                });
+
+                res.json({ url: session.url });
+
+            } catch (stripeErr) {
+
+                console.error("Stripe error:", stripeErr);
+                res.status(500).json({ error: "Stripe failed" });
+
+            }
+        }
+    );
 });
 
-res.json({url:session.url});
 
-}catch(err){
-console.error("Stripe error:",err);
-res.status(500).json({error:"Stripe failed"});
-}
+/* ---------- CONFIRM PURCHASE AFTER PAYMENT ---------- */
+router.post("/confirm-purchase", (req, res) => {
 
-});
-/* CONFIRM PURCHASE AFTER PAYMENT */
+    const { noteId, studentId } = req.body;
 
-router.post("/confirm-purchase", async (req,res)=>{
+    db.query(
+        "SELECT price FROM notes WHERE id=?",
+        [noteId],
+        (err, rows) => {
 
-const {noteId, studentId} = req.body;
+            if (err) {
+                console.error(err);
+                return res.status(500).json({ error: "DB error" });
+            }
 
-try{
+            if (!rows.length) {
+                return res.status(404).json({ error: "Note not found" });
+            }
 
-const [rows] = await db.query(
-"SELECT price FROM notes WHERE id=?",
-[noteId]
-);
+            const price = rows[0].price;
 
-if(!rows.length){
-return res.status(404).json({error:"Note not found"});
-}
+            /* prevent duplicate purchase */
+            db.query(
+                "SELECT id FROM note_purchases WHERE student_id=? AND note_id=?",
+                [studentId, noteId],
+                (err, existing) => {
 
-const price = rows[0].price;
+                    if (err) {
+                        console.error(err);
+                        return res.status(500).json({ error: "Check failed" });
+                    }
 
-/* prevent duplicate purchases */
+                    if (existing.length) {
+                        return res.json({ success: true });
+                    }
 
-const [existing] = await db.query(
-"SELECT id FROM note_purchases WHERE student_id=? AND note_id=?",
-[studentId, noteId]
-);
+                    /* insert purchase */
+                    db.query(
+                        "INSERT INTO note_purchases (note_id, student_id, amount_paid) VALUES (?,?,?)",
+                        [noteId, studentId, price],
+                        (err) => {
 
-if(existing.length){
-return res.json({success:true});
-}
+                            if (err) {
+                                console.error(err);
+                                return res.status(500).json({ error: "Insert failed" });
+                            }
 
-/* insert purchase */
-
-await db.query(
-"INSERT INTO note_purchases (note_id, student_id, amount_paid) VALUES (?,?,?)",
-[noteId, studentId, price]
-);
-
-res.json({success:true});
-
-}catch(err){
-console.error(err);
-res.status(500).json({error:"Insert failed"});
-}
-
+                            res.json({ success: true });
+                        }
+                    );
+                }
+            );
+        }
+    );
 });
 
 module.exports = router;
