@@ -100,16 +100,20 @@ const studentId = params.get("studentId");
 
 async function confirmPurchase(){
 
-await fetch(`${BASE_URL}/api/payments/confirm-purchase`,{
-method:"POST",
-headers:{"Content-Type":"application/json"},
-body:JSON.stringify({
-noteId,
-studentId
-})
-});
+    await fetch(`${BASE_URL}/api/payments/confirm-purchase`,{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({
+            noteId,
+            studentId
+        })
+    });
 
+    // redirect ONLY after purchase is recorded
+    window.location.href = `/student/note_viewer.html?noteId=${noteId}`;
 }
+
+confirmPurchase();
 
 /* confirm purchase immediately */
 confirmPurchase();
