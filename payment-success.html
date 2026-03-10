@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Payment Success</title>
+</head>
+
+<body>
+
+<h2>Payment Successful 🎉</h2>
+<p>Your purchase is being confirmed...</p>
+
+<script src="config.js"></script>
+
+<script>
+
+const params = new URLSearchParams(window.location.search);
+
+const noteId = params.get("noteId");
+const studentId = params.get("studentId");
+
+async function confirmPurchase(){
+
+await fetch(`${BASE_URL}/api/payments/confirm-purchase`,{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({
+noteId,
+studentId
+})
+});
+
+document.body.innerHTML = `
+<h2>Purchase Successful 🎉</h2>
+<a href="/student/notes_marketplace.html">Return to marketplace</a>
+`;
+
+}
+
+confirmPurchase();
+
+</script>
+
+</body>
+</html>

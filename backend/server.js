@@ -17,18 +17,19 @@ app.use(cors({
 app.use(express.json());
 app.use("/match", require("./routes/match"));
 app.use("/uploads", express.static("uploads"));
+app.use("/api/payments", require("./routes/paymentRoutes"));
 
 /* ---------------- DB CONNECTION ---------------- */
 
-// app.get("/test-db", async (req, res) => {
-//     try {
-//         const [rows] = await db.query("SELECT 1 AS ok");
-//         res.json(rows);
-//     } catch (err) {
-//         console.error("DB TEST ERROR:", err);
-//         res.status(500).json({ error: err.message });
-//     }
-// });
+app.get("/test-db", async (req, res) => {
+    try {
+        const [rows] = await db.query("SELECT 1 AS ok");
+        res.json(rows);
+    } catch (err) {
+        console.error("DB TEST ERROR:", err);
+        res.status(500).json({ error: err.message });
+    }
+});
 /* ---------------- NOTIFICATIONS HELPER ---------------- */
 function createNotification(email, message) {
     if (!email) return;
@@ -135,18 +136,18 @@ app.get("/api/peer/earnings/:peerId", (req, res) => {
 app.get("/api/peer/earnings/monthly/:peerId", (req, res) => {
 
     const sql = `
-    SELECT 
-        YEARWEEK(np.purchased_at, 1) AS week,
-        SUM(np.amount_paid - pe.platform_cut) AS total_earning
-    FROM note_purchases np
-    JOIN notes n ON np.note_id = n.id
-    JOIN platform_earnings pe 
-        ON pe.reference_id = np.id 
-       AND pe.source = 'note_purchase'
-    WHERE n.uploaded_by = ?
-    GROUP BY week
-    ORDER BY week
-`;
+        SELECT 
+            DATE_FORMAT(np.purchased_at, '%Y-%m') AS month,
+            SUM(np.amount_paid - pe.platform_cut) AS total_earning
+        FROM note_purchases np
+        JOIN notes n ON np.note_id = n.id
+        JOIN platform_earnings pe 
+            ON pe.reference_id = np.id 
+           AND pe.source = 'note_purchase'
+        WHERE n.uploaded_by = ?
+        GROUP BY month
+        ORDER BY month
+    `;
 
     db.query(sql, [req.params.peerId], (err, rows) => {
         if (err) return res.status(500).json({ error: "Graph failed" });
@@ -173,20 +174,19 @@ app.get("/api/peer/reviews-dashboard/:peerId", (req, res) => {
     `;
 
     /* MONTHLY GRAPH DATA */
-    /* WEEKLY GRAPH DATA */
-const weeklyQuery = `
-    SELECT 
-        YEARWEEK(s.completed_at, 1) AS week,
-        COUNT(DISTINCT s.id) AS sessions,
-        COUNT(DISTINCT r.id) AS reviews
-    FROM sessions s
-    LEFT JOIN ratings r 
-        ON r.session_id = s.id
-    WHERE s.tutor_id = ?
-      AND s.status = 'completed'
-    GROUP BY week
-    ORDER BY week
-`;
+    const monthlyQuery = `
+        SELECT 
+            DATE_FORMAT(s.completed_at, '%Y-%m') AS month,
+            COUNT(DISTINCT s.id) AS sessions,
+            COUNT(DISTINCT r.id) AS reviews
+        FROM sessions s
+        LEFT JOIN ratings r 
+            ON r.session_id = s.id
+        WHERE s.tutor_id = ?
+          AND s.status = 'completed'
+        GROUP BY month
+        ORDER BY month
+    `;
 
     db.query(totalSessionsQuery, [peerId], (err, sessionsRes) => {
         if (err) return res.status(500).json({ error: "Sessions fetch failed" });
@@ -194,13 +194,13 @@ const weeklyQuery = `
         db.query(totalReviewsQuery, [peerId], (err, reviewsRes) => {
             if (err) return res.status(500).json({ error: "Reviews fetch failed" });
 
-            db.query(weeklyQuery, [peerId], (err, weeklyRes) => {
+            db.query(monthlyQuery, [peerId], (err, monthlyRes) => {
                 if (err) return res.status(500).json({ error: "Graph data failed" });
 
                 res.json({
                     total_sessions: sessionsRes[0].total_sessions,
                     total_reviews: reviewsRes[0].total_reviews,
-                    weekly: weeklyRes
+                    monthly: monthlyRes
                 });
             });
         });
@@ -388,52 +388,35 @@ app.put("/api/sessions/:id/accept", (req, res) => {
 
     const sql = `
         UPDATE sessions
-        SET status = 'accepted',
-            started_at = NOW()
+        SET status = 'accepted'
         WHERE id = ?
     `;
 
-    db.query(sql, [sessionId], (err, result) => {
+    db.query(sql, [sessionId], err => {
+        if (err) return res.status(500).json({ error: "Accept failed" });
 
-        if (err) {
-            console.error("DB error accepting session:", err);
-            return res.status(500).json({ error: "Accept failed" });
+        // 🔥 NOTIFY STUDENT IMMEDIATELY
+        console.log(`📢 Emitting 'sessionAccepted' to room: ${sessionId}`);
+        io.to(sessionId).emit("sessionAccepted");
+        // 🔔 Notify student
+db.query(
+    `
+    SELECT u.email
+    FROM users u
+    JOIN sessions s ON u.id = s.student_id
+    WHERE s.id = ?
+    `,
+    [sessionId],
+    (err, rows) => {
+        if (!err && rows.length) {
+            createNotification(
+                rows[0].email,
+                "Your session request was accepted"
+            );
         }
-
-        console.log("Session accepted:", sessionId);
-
-        // emit safely
-        try {
-            if (io) {
-                console.log(`📢 Emitting sessionAccepted to room ${sessionId}`);
-                io.to(sessionId).emit("sessionAccepted");
-            }
-        } catch (socketErr) {
-            console.error("Socket emit failed:", socketErr);
-        }
-
-        // notify student
-        db.query(
-            `
-            SELECT u.email
-            FROM users u
-            JOIN sessions s ON u.id = s.student_id
-            WHERE s.id = ?
-            `,
-            [sessionId],
-            (err, rows) => {
-
-                if (!err && rows.length) {
-                    createNotification(
-                        rows[0].email,
-                        "Your session request was accepted"
-                    );
-                }
-
-                res.json({ message: "Session accepted" });
-            }
-        );
-
+    }
+);
+        res.json({ message: "Session accepted" });
     });
 });
 
@@ -607,7 +590,7 @@ db.query(
     );
 });
 app.get("/api/tutors", (req, res) => {
-    const { topic = "" } = req.query;
+    const { topic } = req.query;
 
     const sql = `
         SELECT id, name, email, skills, institute, is_online
@@ -622,20 +605,17 @@ app.get("/api/tutors", (req, res) => {
         res.json(rows);
     });
 });
+
 const http = require("http");
 const { Server } = require("socket.io");
 
 const server = http.createServer(app);
 const io = new Server(server, {
-    cors: {
-        origin: [
-            "http://localhost:3000",
-            "http://localhost:5173",
-            "https://peertutoria.vercel.app"
-        ],
-        methods: ["GET", "POST"],
-        credentials: true
-    }
+  cors: {
+    origin: true,
+    methods: ["GET", "POST"],
+    credentials: true
+  }
 });
 
 /* 🔥 TRACK USERS PER SESSION */
@@ -659,18 +639,8 @@ io.on("connection", socket => {
 
         // 🔥 BOTH USERS READY → START VIDEO SAFELY
         if (sessionUsers[sessionId] === 2) {
-
-    // set session start time once
-    db.query(
-        "UPDATE sessions SET started_at = NOW() WHERE id=? AND started_at IS NULL",
-        [sessionId],
-        (err) => {
-            if (err) console.error("Failed to set session start time:", err);
+            io.to(sessionId).emit("readyForCall");
         }
-    );
-
-    io.to(sessionId).emit("readyForCall");
-}
     });
 
     /* ---------- CHAT ---------- */
@@ -896,7 +866,7 @@ const PORT = process.env.PORT || 5000;
 app.use((err, req, res, next) => {
     console.error("GLOBAL ERROR:", err);
 
-    res.header("Access-Control-Allow-Origin", "http://localhost:3000");
+    res.header("Access-Control-Allow-Origin", req.headers.origin);
     res.header("Access-Control-Allow-Credentials", "true");
 
     res.status(500).json({

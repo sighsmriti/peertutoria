@@ -128,27 +128,22 @@ async function searchNotes() {
 }
 
 /* ---------- BUY NOTE ---------- */
+/* ---------- BUY NOTE ---------- */
 async function buyNote(noteId, price){
-    const confirmBuy = confirm(`Buy this note for ₹${price}?`);
-    if(!confirmBuy) return;
 
-    const res = await fetch(`${BASE_URL}/api/notes/fake-purchase`,{
-        method:"POST",
-        headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({
-            noteId:noteId,
-            studentId:user.id
-        })
-    });
+const res = await fetch(`${BASE_URL}/api/payments/create-checkout-session`,{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({
+noteId: noteId,
+studentId: user.id
+})
+});
 
-    const data = await res.json();
+const data = await res.json();
 
-    if(data.success){
-        alert("Purchase successful!");
-        searchNotes();
-    } else {
-        alert(data.error || "Purchase failed");
-    }
+window.location.href = data.url;
+
 }
 
 /* ---------- DOWNLOAD ---------- */
