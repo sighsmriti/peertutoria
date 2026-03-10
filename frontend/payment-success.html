@@ -1,18 +1,98 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<title>Payment Success</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Payment Successful - PeerTutoria</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<style>
+:root{
+--primary:#2196F3;
+--secondary:#FF4081;
+--bg:#f1f6ff;
+--white:#fff;
+--radius:14px;
+--shadow:0 8px 20px rgba(0,0,0,0.1);
+}
+
+body{
+margin:0;
+font-family:Poppins,sans-serif;
+background:var(--bg);
+display:flex;
+justify-content:center;
+align-items:center;
+height:100vh;
+}
+
+.card{
+background:var(--white);
+padding:40px;
+border-radius:var(--radius);
+box-shadow:var(--shadow);
+text-align:center;
+max-width:420px;
+width:90%;
+}
+
+.check{
+font-size:60px;
+color:#4CAF50;
+margin-bottom:15px;
+animation:pop 0.5s ease;
+}
+
+@keyframes pop{
+0%{transform:scale(0);}
+100%{transform:scale(1);}
+}
+
+h2{
+margin:10px 0;
+color:var(--primary);
+}
+
+p{
+color:#555;
+margin-bottom:25px;
+}
+
+button{
+background:var(--primary);
+color:white;
+border:none;
+padding:12px 20px;
+border-radius:var(--radius);
+cursor:pointer;
+font-size:14px;
+}
+
+button:hover{
+background:var(--secondary);
+}
+</style>
 </head>
 
 <body>
 
-<h2>Payment Successful 🎉</h2>
-<p>Your purchase is being confirmed...</p>
+<div class="card">
+
+<div class="check">✅</div>
+
+<h2>Payment Successful</h2>
+
+<p>Your purchase is being confirmed.<br>
+Your note will open shortly.</p>
+
+<button onclick="openNote()">Open Note Now</button>
+
+</div>
 
 <script src="frontend/config.js"></script>
 
 <script>
-
 const params = new URLSearchParams(window.location.search);
 
 const noteId = params.get("noteId");
@@ -29,14 +109,18 @@ studentId
 })
 });
 
-document.body.innerHTML = `
-<h2>Purchase Successful 🎉</h2>
-<a href="/student/notes_marketplace.html">Return to marketplace</a>
-`;
-
 }
 
+/* confirm purchase immediately */
 confirmPurchase();
+
+/* auto open note after 2 seconds */
+
+function openNote(){
+window.location.href = `/student/note_viewer.html?noteId=${noteId}`;
+}
+
+setTimeout(openNote,2000);
 
 </script>
 
