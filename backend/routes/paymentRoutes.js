@@ -88,6 +88,7 @@ router.post("/confirm-purchase", (req, res) => {
             const price = rows[0].price;
 
             /* prevent duplicate purchase */
+
             db.query(
                 "SELECT id FROM note_purchases WHERE student_id=? AND note_id=?",
                 [studentId, noteId],
@@ -103,21 +104,44 @@ router.post("/confirm-purchase", (req, res) => {
                     }
 
                     /* insert purchase */
+
                     db.query(
                         "INSERT INTO note_purchases (note_id, student_id, amount_paid) VALUES (?,?,?)",
                         [noteId, studentId, price],
-                        (err) => {
+                        (err, result) => {
 
                             if (err) {
                                 console.error(err);
                                 return res.status(500).json({ error: "Insert failed" });
                             }
 
-                            res.json({ success: true });
+                            const purchaseId = result.insertId;
+
+                            const platformCut = price * 0.10;
+
+                            /* record platform earnings */
+
+                            db.query(
+                                `INSERT INTO platform_earnings
+                                (source, reference_id, gross_amount, platform_cut)
+                                VALUES ('note_purchase', ?, ?, ?)`,
+                                [purchaseId, price, platformCut],
+                                (err) => {
+
+                                    if (err) {
+                                        console.error("Platform earnings insert failed:", err);
+                                    }
+
+                                    res.json({ success: true });
+                                }
+                            );
+
                         }
                     );
+
                 }
             );
+
         }
     );
 });
