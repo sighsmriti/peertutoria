@@ -142,6 +142,13 @@ studentId: user.id
 
 const data = await res.json();
 
+console.log("Stripe response:", data);
+
+if (!data.url) {
+    alert("Payment session failed. Check server logs.");
+    return;
+}
+
 window.location.href = data.url;
 
 }
