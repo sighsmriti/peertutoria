@@ -393,31 +393,47 @@ app.put("/api/sessions/:id/accept", (req, res) => {
         WHERE id = ?
     `;
 
-    db.query(sql, [sessionId], err => {
-        if (err) return res.status(500).json({ error: "Accept failed" });
+    db.query(sql, [sessionId], (err, result) => {
 
-        // 🔥 NOTIFY STUDENT IMMEDIATELY
-        console.log(`📢 Emitting 'sessionAccepted' to room: ${sessionId}`);
-        io.to(sessionId).emit("sessionAccepted");
-        // 🔔 Notify student
-db.query(
-    `
-    SELECT u.email
-    FROM users u
-    JOIN sessions s ON u.id = s.student_id
-    WHERE s.id = ?
-    `,
-    [sessionId],
-    (err, rows) => {
-        if (!err && rows.length) {
-            createNotification(
-                rows[0].email,
-                "Your session request was accepted"
-            );
+        if (err) {
+            console.error("DB error accepting session:", err);
+            return res.status(500).json({ error: "Accept failed" });
         }
-    }
-);
-        res.json({ message: "Session accepted" });
+
+        console.log("Session accepted:", sessionId);
+
+        // emit safely
+        try {
+            if (io) {
+                console.log(`📢 Emitting sessionAccepted to room ${sessionId}`);
+                io.to(sessionId).emit("sessionAccepted");
+            }
+        } catch (socketErr) {
+            console.error("Socket emit failed:", socketErr);
+        }
+
+        // notify student
+        db.query(
+            `
+            SELECT u.email
+            FROM users u
+            JOIN sessions s ON u.id = s.student_id
+            WHERE s.id = ?
+            `,
+            [sessionId],
+            (err, rows) => {
+
+                if (!err && rows.length) {
+                    createNotification(
+                        rows[0].email,
+                        "Your session request was accepted"
+                    );
+                }
+
+                res.json({ message: "Session accepted" });
+            }
+        );
+
     });
 });
 
