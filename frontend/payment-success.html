@@ -100,7 +100,7 @@ const studentId = params.get("studentId");
 
 async function confirmPurchase(){
 
-    await fetch(`${BASE_URL}/api/payments/confirm-purchase`,{
+    const res = await fetch(`${BASE_URL}/api/payments/confirm-purchase`,{
         method:"POST",
         headers:{"Content-Type":"application/json"},
         body:JSON.stringify({
@@ -109,7 +109,16 @@ async function confirmPurchase(){
         })
     });
 
-    // redirect AFTER purchase is saved
+    const data = await res.json();
+
+    if(!data.success){
+        alert("Purchase confirmation failed");
+        return;
+    }
+
+    // wait a moment to ensure DB commit
+    await new Promise(r => setTimeout(r,600));
+
     window.location.href = `/student/note_viewer.html?noteId=${noteId}&purchased=1`;
 }
 
