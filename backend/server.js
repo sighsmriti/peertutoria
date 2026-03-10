@@ -14,7 +14,7 @@ app.use(cors({
   credentials: true
 }));
 
-
+console.log("DB_PASSWORD:", process.env.DB_PASSWORD);
 app.use(express.json());
 app.use("/match", require("./routes/match"));
 app.use("/uploads", express.static("uploads"));
