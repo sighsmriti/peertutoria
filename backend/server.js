@@ -22,14 +22,19 @@ app.use("/api/payments", require("./routes/paymentRoutes"));
 
 /* ---------------- DB CONNECTION ---------------- */
 
-app.get("/test-db", async (req, res) => {
-    try {
-        const [rows] = await db.query("SELECT 1 AS ok");
+app.get("/test-db", (req, res) => {
+
+    db.query("SELECT 1 AS ok", (err, rows) => {
+
+        if (err) {
+            console.error("DB TEST ERROR:", err);
+            return res.status(500).json({ error: err.message });
+        }
+
         res.json(rows);
-    } catch (err) {
-        console.error("DB TEST ERROR:", err);
-        res.status(500).json({ error: err.message });
-    }
+
+    });
+
 });
 /* ---------------- NOTIFICATIONS HELPER ---------------- */
 function createNotification(email, message) {
