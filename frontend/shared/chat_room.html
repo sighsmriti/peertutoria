@@ -238,8 +238,7 @@ function startTimer(startTime){
 
     const start = new Date(startTime).getTime();
 
-    setInterval(() => {
-
+    function update(){
         const diff = Date.now() - start;
 
         const minutes = Math.floor(diff / 60000);
@@ -247,8 +246,10 @@ function startTimer(startTime){
 
         document.getElementById("sessionTimer").innerText =
             `${minutes}:${seconds.toString().padStart(2,"0")}`;
+    }
 
-    },1000);
+    update(); // run immediately
+    setInterval(update,1000);
 }
 </script>
 </head>
