@@ -86,14 +86,17 @@ video {
 </div>
 
 <div class="video-container">
-    <div class="video-box">
-    <video id="localVideo" autoplay muted playsinline></video>
-</div>
-<div style="text-align:center;font-size:13px;">You</div>
 
 <div class="video-box">
     <video id="localVideo" autoplay muted playsinline></video>
     <div style="text-align:center;font-size:13px;">You</div>
+</div>
+
+<div class="video-box">
+    <video id="remoteVideo" autoplay playsinline></video>
+    <div style="text-align:center;font-size:13px;">Peer</div>
+</div>
+
 </div>
 
 <div class="controls">
@@ -232,7 +235,7 @@ socket.on("videoOffer", async ({ offer }) => {
     // 🔥 Apply buffered ICE
     for (const candidate of pendingCandidates) {
     try {
-        await peerConnection.addIceCandidate(candidate);
+        await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
     } catch (err) {
         console.error("Buffered ICE failed:", err);
     }
@@ -246,7 +249,7 @@ socket.on("videoAnswer", async ({ answer }) => {
     // 🔥 Apply buffered ICE
     for (const candidate of pendingCandidates) {
     try {
-        await peerConnection.addIceCandidate(candidate);
+        await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
     } catch (err) {
         console.error("Buffered ICE failed:", err);
     }
@@ -263,7 +266,7 @@ socket.on("iceCandidate", async ({ candidate }) => {
 
     if (peerConnection.remoteDescription && peerConnection.remoteDescription.type) {
         try {
-            await peerConnection.addIceCandidate(candidate);
+            await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
         } catch (err) {
             console.error("ICE error:", err);
         }
