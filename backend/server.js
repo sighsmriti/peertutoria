@@ -393,10 +393,11 @@ app.put("/api/sessions/:id/accept", (req, res) => {
     const sessionId = req.params.id;
 
     const sql = `
-        UPDATE sessions
-        SET status = 'accepted'
-        WHERE id = ?
-    `;
+    UPDATE sessions
+    SET status = 'accepted',
+        started_at = NOW()
+    WHERE id = ?
+`;
 
     db.query(sql, [sessionId], err => {
         if (err) return res.status(500).json({ error: "Accept failed" });
