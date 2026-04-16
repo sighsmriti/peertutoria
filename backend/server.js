@@ -633,22 +633,21 @@ io.on("connection", socket => {
 
     /* ---------- JOIN SESSION ---------- */
     socket.on("joinSession", sessionId => {
-        socket.join(sessionId);
-        console.log("Joined session:", sessionId);
+    socket.join(sessionId);
+    socket.sessionId = sessionId; // Store session ID safely
 
-        // Track number of users in session
-        sessionUsers[sessionId] = (sessionUsers[sessionId] || 0) + 1;
+    console.log("Joined session:", sessionId);
 
-        console.log(
-            `Users in session ${sessionId}:`,
-            sessionUsers[sessionId]
-        );
+    // Track number of users in session
+    sessionUsers[sessionId] = (sessionUsers[sessionId] || 0) + 1;
 
-        // 🔥 BOTH USERS READY → START VIDEO SAFELY
-        if (sessionUsers[sessionId] === 2) {
-            io.to(sessionId).emit("readyForCall");
-        }
-    });
+    console.log(`Users in session ${sessionId}:`, sessionUsers[sessionId]);
+
+    // Start video when both users join
+    if (sessionUsers[sessionId] === 2) {
+        io.to(sessionId).emit("readyForCall");
+    }
+});
 
     /* ---------- CHAT ---------- */
     socket.on("chatMessage", data => {
@@ -696,18 +695,19 @@ io.on("connection", socket => {
 
     /* ---------- DISCONNECT ---------- */
     socket.on("disconnect", () => {
-        console.log("User disconnected:", socket.id);
+    console.log("User disconnected:", socket.id);
 
-        // Safe cleanup (handles refresh / tab close)
-        for (const sessionId in sessionUsers) {
-            sessionUsers[sessionId] = Math.max(
-                0,
-                sessionUsers[sessionId] - 1
-            );
+    const sessionId = socket.sessionId;
+
+    if (sessionId && sessionUsers[sessionId]) {
+        sessionUsers[sessionId]--;
+
+        if (sessionUsers[sessionId] <= 0) {
+            delete sessionUsers[sessionId];
         }
-    });
+    }
 });
-
+});
 /* ---------------- SECURE NOTE VIEW ---------------- */
 app.get("/api/notes/view/:noteId/:userId", (req, res) => {
 

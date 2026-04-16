@@ -117,7 +117,11 @@ if (!user || !sessionId) {
 
 /* ================= SOCKET ================= */
 const socket = io(BASE_URL);
-socket.emit("joinSession", sessionId);
+socket.emit("joinSession", {
+    sessionId,
+    userId: user.id,
+    role: user.role
+});
 /* ================= LOAD SESSION TIMER ================= */
 
 fetch(`${BASE_URL}/api/sessions/${sessionId}`)
@@ -156,20 +160,46 @@ const pcConfig = {
 function createPeerConnection() {
     peerConnection = new RTCPeerConnection(pcConfig);
 
-    peerConnection.ontrack = e => {
-        const remoteVideo = document.getElementById("remoteVideo");
-        remoteVideo.srcObject = e.streams[0];
-        remoteVideo.play().catch(() => {});
-    };
+    peerConnection.ontrack = (event) => {
+    console.log("Remote track received:", event);
 
-    peerConnection.onicecandidate = e => {
-        if (e.candidate) {
-            socket.emit("iceCandidate", {
-                sessionId,
-                candidate: e.candidate
-            });
-        }
+    const remoteVideo = document.getElementById("remoteVideo");
+
+    if (!remoteVideo.srcObject) {
+        remoteVideo.srcObject = new MediaStream();
+    }
+
+    event.streams[0].getTracks().forEach(track => {
+        remoteVideo.srcObject.addTrack(track);
+    });
+
+    remoteVideo.onloadedmetadata = () => {
+        remoteVideo.play().catch(err =>
+            console.error("Remote video play error:", err)
+        );
     };
+    peerConnection.oniceconnectionstatechange = () => {
+    console.log("ICE State:", peerConnection.iceConnectionState);
+};
+
+peerConnection.onicegatheringstatechange = () => {
+    console.log("ICE Gathering State:", peerConnection.iceGatheringState);
+};
+
+peerConnection.onsignalingstatechange = () => {
+    console.log("Signaling State:", peerConnection.signalingState);
+};
+};
+
+    peerConnection.onicecandidate = event => {
+    if (event.candidate) {
+        console.log("Sending ICE Candidate:", event.candidate);
+        socket.emit("iceCandidate", {
+            sessionId,
+            candidate: event.candidate
+        });
+    }
+};
 
     peerConnection.onconnectionstatechange = () => {
         console.log("Connection state:", peerConnection.connectionState);
@@ -258,20 +288,19 @@ pendingCandidates = [];
 });
 
 socket.on("iceCandidate", async ({ candidate }) => {
+    console.log("Received ICE Candidate:", candidate);
 
     if (!peerConnection) {
         pendingCandidates.push(candidate);
         return;
     }
 
-    if (peerConnection.remoteDescription && peerConnection.remoteDescription.type) {
-        try {
-            await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
-        } catch (err) {
-            console.error("ICE error:", err);
-        }
-    } else {
-        pendingCandidates.push(candidate);
+    try {
+        await peerConnection.addIceCandidate(
+            new RTCIceCandidate(candidate)
+        );
+    } catch (err) {
+        console.error("ICE Candidate Error:", err);
     }
 });
 
