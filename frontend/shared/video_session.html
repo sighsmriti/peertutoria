@@ -124,15 +124,22 @@ socket.emit("joinSession", {
 });
 /* ================= LOAD SESSION TIMER ================= */
 
-fetch(`${BASE_URL}/api/sessions/${sessionId}`)
-.then(res => res.json())
-.then(session => {
+function loadSessionTimer(retries = 5) {
+    fetch(`${BASE_URL}/api/sessions/${sessionId}`)
+        .then(res => res.json())
+        .then(session => {
+            if (session.started_at) {
+                startTimer(session.started_at);
+            } else if (retries > 0) {
+                setTimeout(() => loadSessionTimer(retries - 1), 1000);
+            } else {
+                console.warn("Session start time unavailable.");
+            }
+        })
+        .catch(err => console.error("Timer error:", err));
+}
 
-    if(!session.started_at) return;
-
-    startTimer(session.started_at);
-
-});
+loadSessionTimer();
 /* ================= WEBRTC STATE ================= */
 let localStream;
 let peerConnection;
@@ -172,13 +179,9 @@ function createPeerConnection() {
     event.streams[0].getTracks().forEach(track => {
         remoteVideo.srcObject.addTrack(track);
     });
+};
 
-    remoteVideo.onloadedmetadata = () => {
-        remoteVideo.play().catch(err =>
-            console.error("Remote video play error:", err)
-        );
-    };
-    peerConnection.oniceconnectionstatechange = () => {
+peerConnection.oniceconnectionstatechange = () => {
     console.log("ICE State:", peerConnection.iceConnectionState);
 };
 
@@ -188,7 +191,6 @@ peerConnection.onicegatheringstatechange = () => {
 
 peerConnection.onsignalingstatechange = () => {
     console.log("Signaling State:", peerConnection.signalingState);
-};
 };
 
     peerConnection.onicecandidate = event => {
@@ -203,10 +205,7 @@ peerConnection.onsignalingstatechange = () => {
 
     peerConnection.onconnectionstatechange = () => {
         console.log("Connection state:", peerConnection.connectionState);
-        if (
-    peerConnection.connectionState === "failed" ||
-    peerConnection.connectionState === "disconnected"
-) {
+        if (peerConnection.connectionState === "failed") {
     console.log("Reconnecting...");
     started = false;
     startVideo();
@@ -357,22 +356,27 @@ socket.on("sessionEnded", () => {
 });
 /* ================= SESSION TIMER ================= */
 
-function startTimer(startTime){
+let timerInterval;
 
+function startTimer(startTime) {
     const start = new Date(startTime).getTime();
+    if (isNaN(start)) return;
 
-    function update(){
+    if (timerInterval) {
+        clearInterval(timerInterval);
+    }
+
+    function update() {
         const diff = Date.now() - start;
-
         const minutes = Math.floor(diff / 60000);
         const seconds = Math.floor((diff % 60000) / 1000);
 
         document.getElementById("sessionTimer").innerText =
-            `${minutes}:${seconds.toString().padStart(2,"0")}`;
+            `${minutes}:${seconds.toString().padStart(2, "0")}`;
     }
 
     update();
-    setInterval(update,1000);
+    timerInterval = setInterval(update, 1000);
 }
 /* ================= START ================= */
 socket.on("readyForCall", () => {

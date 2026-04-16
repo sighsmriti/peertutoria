@@ -96,36 +96,36 @@ if (!user || !sessionId) {
 /* ---------- FETCH SESSION TO GET TUTOR ---------- */
 let tutorId = null;
 
-fetch(`${BASE_URL}/api/sessions/${sessionId}`)
-    .then(res => res.json())
-    .then(session => {
+function loadSessionDetails(retries = 5) {
+    fetch(`${BASE_URL}/api/sessions/${sessionId}`)
+        .then(res => res.json())
+        .then(session => {
+            tutorId = session.tutor_id;
 
-        tutorId = session.tutor_id;
+            if (session.started_at && session.completed_at) {
+                const start = new Date(session.started_at);
+                const end = new Date(session.completed_at);
+                const diff = Math.max(0, end - start);
 
-        /* -------- SESSION DURATION -------- */
+                const minutes = Math.floor(diff / 60000);
+                const seconds = Math.floor((diff % 60000) / 1000);
 
-        if(session.started_at && session.completed_at){
-
-    const start = new Date(session.started_at);
-    const end = new Date(session.completed_at);
-
-    const minutes = Math.floor((end - start) / 60000);
-
-    document.getElementById("sessionDuration").innerText =
-        `Session Duration: ${minutes} minutes`;
-
-} else {
-
-    document.getElementById("sessionDuration").innerText =
-        "Session duration unavailable";
-
+                document.getElementById("sessionDuration").innerText =
+                    `Session Duration: ${minutes}m ${seconds}s`;
+            } else if (retries > 0) {
+                setTimeout(() => loadSessionDetails(retries - 1), 1000);
+            } else {
+                document.getElementById("sessionDuration").innerText =
+                    "Session duration unavailable";
+            }
+        })
+        .catch(() => {
+            alert("Failed to load session");
+            window.location.href = "student_dashboard.html";
+        });
 }
 
-    })
-    .catch(() => {
-        alert("Failed to load session");
-        window.location.href = "student_dashboard.html";
-    });
+loadSessionDetails();
 
 /* ---------- STAR LOGIC ---------- */
 const stars = document.querySelectorAll("#starContainer span");

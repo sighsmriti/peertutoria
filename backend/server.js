@@ -14,7 +14,7 @@ app.use(cors({
   credentials: true
 }));
 
-console.log("DB_PASSWORD:", process.env.DB_PASSWORD);
+//console.log("DB_PASSWORD:", process.env.DB_PASSWORD);
 app.use(express.json());
 app.use("/match", require("./routes/match"));
 app.use("/uploads", express.static("uploads"));
@@ -632,19 +632,32 @@ io.on("connection", socket => {
     console.log("User connected:", socket.id);
 
     /* ---------- JOIN SESSION ---------- */
-    socket.on("joinSession", sessionId => {
+   socket.on("joinSession", data => {
+    const sessionId =
+        typeof data === "object" ? data.sessionId : data;
+
+    if (!sessionId) {
+        console.error("Invalid sessionId received:", data);
+        return;
+    }
+
     socket.join(sessionId);
-    socket.sessionId = sessionId; // Store session ID safely
+    socket.sessionId = sessionId;
 
     console.log("Joined session:", sessionId);
 
     // Track number of users in session
-    sessionUsers[sessionId] = (sessionUsers[sessionId] || 0) + 1;
+    sessionUsers[sessionId] =
+        (sessionUsers[sessionId] || 0) + 1;
 
-    console.log(`Users in session ${sessionId}:`, sessionUsers[sessionId]);
+    console.log(
+        `Users in session ${sessionId}:`,
+        sessionUsers[sessionId]
+    );
 
     // Start video when both users join
     if (sessionUsers[sessionId] === 2) {
+        console.log(`Both users ready in session ${sessionId}`);
         io.to(sessionId).emit("readyForCall");
     }
 });
@@ -682,16 +695,20 @@ io.on("connection", socket => {
 
     /* ---------- END SESSION ---------- */
     socket.on("endSession", sessionId => {
-        io.to(sessionId).emit("sessionEnded");
+    const id = sessionId || socket.sessionId;
 
-        // cleanup count
-        if (sessionUsers[sessionId]) {
-            sessionUsers[sessionId] = Math.max(
-                0,
-                sessionUsers[sessionId] - 1
-            );
-        }
-    });
+    if (!id) {
+        console.error("Invalid session ID in endSession");
+        return;
+    }
+
+    console.log(`Ending session: ${id}`);
+
+    // Clean up tracking only — do NOT emit here
+    if (sessionUsers[id]) {
+        delete sessionUsers[id];
+    }
+});
 
     /* ---------- DISCONNECT ---------- */
     socket.on("disconnect", () => {

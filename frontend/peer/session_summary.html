@@ -104,35 +104,40 @@ if(!user || !sessionId){
 
 /* -------- LOAD SESSION INFO -------- */
 
-fetch(`${BASE_URL}/api/sessions/${sessionId}`)
-.then(res => res.json())
-.then(session => {
+function loadSessionSummary(retries = 5) {
+    fetch(`${BASE_URL}/api/sessions/${sessionId}`)
+        .then(res => res.json())
+        .then(session => {
 
-    if(session.topic){
-        document.getElementById("topic").innerText =
-            `Topic: ${session.topic}`;
-    }
+            if (session.topic) {
+                document.getElementById("topic").innerText =
+                    `Topic: ${session.topic}`;
+            }
 
-    if(session.started_at && session.completed_at){
+            if (session.started_at && session.completed_at) {
+                const start = new Date(session.started_at);
+                const end = new Date(session.completed_at);
 
-        const start = new Date(session.started_at);
-        const end = new Date(session.completed_at);
+                const diff = Math.max(0, end - start);
+                const minutes = Math.floor(diff / 60000);
+                const seconds = Math.floor((diff % 60000) / 1000);
 
-        const diff = end - start;
+                document.getElementById("duration").innerText =
+                    `Duration: ${minutes}m ${seconds}s`;
+            } else if (retries > 0) {
+                setTimeout(() => loadSessionSummary(retries - 1), 1000);
+            } else {
+                document.getElementById("duration").innerText =
+                    "Duration unavailable";
+            }
+        })
+        .catch(() => {
+            document.getElementById("duration").innerText =
+                "Error loading session data";
+        });
+}
 
-        const minutes = Math.floor(diff / 60000);
-        const seconds = Math.floor((diff % 60000) / 1000);
-
-        document.getElementById("duration").innerText =
-            `Duration: ${minutes}m ${seconds}s`;
-
-    } else {
-        document.getElementById("duration").innerText =
-            "Duration unavailable";
-    }
-
-});
-
+loadSessionSummary();
 /* -------- CLOSE BUTTON -------- */
 
 function goDashboard(){

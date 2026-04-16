@@ -144,15 +144,22 @@ const socket = io(BASE_URL);
 socket.emit("joinSession", sessionId);
 /* ---------------- LOAD SESSION START TIME ---------------- */
 
-fetch(`${BASE_URL}/api/sessions/${sessionId}`)
-.then(res => res.json())
-.then(session => {
+function loadSessionTimer(retries = 5) {
+    fetch(`${BASE_URL}/api/sessions/${sessionId}`)
+        .then(res => res.json())
+        .then(session => {
+            if (session.started_at) {
+                startTimer(session.started_at);
+            } else if (retries > 0) {
+                setTimeout(() => loadSessionTimer(retries - 1), 1000);
+            } else {
+                console.warn("Session start time unavailable.");
+            }
+        })
+        .catch(err => console.error("Timer error:", err));
+}
 
-    if(!session.started_at) return;
-
-    startTimer(session.started_at);
-
-});
+loadSessionTimer();
 socket.on("chatMessage", data => {
     const box = document.getElementById("chatBox");
 
@@ -185,6 +192,8 @@ function endSession() {
 
     fetch(`${BASE_URL}/api/sessions/${sessionId}/complete`, {
         method: "PUT"
+    }).finally(() => {
+        socket.emit("endSession", sessionId);
     });
 }
 
@@ -234,13 +243,15 @@ function switchToVideo() {
 }
 /* ---------------- SESSION TIMER ---------------- */
 
-function startTimer(startTime){
+let timerInterval;
 
+function startTimer(startTime){
     const start = new Date(startTime).getTime();
+
+    if (timerInterval) clearInterval(timerInterval);
 
     function update(){
         const diff = Date.now() - start;
-
         const minutes = Math.floor(diff / 60000);
         const seconds = Math.floor((diff % 60000) / 1000);
 
@@ -248,8 +259,8 @@ function startTimer(startTime){
             `${minutes}:${seconds.toString().padStart(2,"0")}`;
     }
 
-    update(); // run immediately
-    setInterval(update,1000);
+    update();
+    timerInterval = setInterval(update, 1000);
 }
 </script>
 </head>
